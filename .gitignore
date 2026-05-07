@@ -1,0 +1,38 @@
+node_modules
+.vscode
+.next
+.github
+# Ignore all files in the "node_modules" directory
+node_modules/
+# Ignore all files in the "dist" directory
+dist/
+# Ignore all files in the "build" directory
+build/
+# Ignore all files in the "coverage" directory
+coverage/
+# Ignore all files in the "out" directory
+out/
+# Ignore all files in the "public" directory except for "favicon.ico"
+public/*
+!public/favicon.ico
+# Ignore all files in the "src" directory except for "index.tsx"
+src/*
+!src/index.tsx
+# Ignore all files in the "lib" directory except for "index.ts"
+lib/* 
+!lib/index.ts
+# Ignore all files in the "components" directory except for "index.tsx"
+components/*
+!components/index.tsx
+# Ignore all files in the "app" directory except for "index.tsx"
+app/*
+!app/index.tsx
+# Ignore all files in the "pages" directory except for "index.tsx"
+pages/*
+!pages/index.tsx
+# add all the sql,md,log,txt files(except readme.md) to ignore
+*.sql
+*.md
+!README.md
+*.log
+*.txt
