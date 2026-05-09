@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { prisma } from '@/lib/prisma';
+import { jwtDecode } from 'jwt-decode';
 
+/**
+ * Edge-safe middleware for route protection
+ * Uses JWT claims instead of Prisma for role-based routing
+ * No database queries in middleware (Edge-compatible)
+ */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   let response = NextResponse.next({ request });
@@ -31,16 +36,34 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data, error } = await supabase.auth.getUser();
-  const email = !error ? data.user?.email ?? null : null;
+  const user = !error ? data.user : null;
 
-  const session = email
-    ? await prisma.user.findUnique({
-        where: { email },
-        select: {
-          role: true,
-        },
-      })
-    : null;
+  /**
+   * Extract role from JWT claims
+   * This avoids database queries in Edge runtime
+   */
+  let userRole: string | null = null;
+  let adminTier: string | null = null;
+  let vendorApprovalStatus: string | null = null;
+
+  if (user) {
+    try {
+      // Get the session to access the JWT
+      const sessionData = await supabase.auth.getSession();
+      if (sessionData.data.session?.access_token) {
+        const decoded = jwtDecode<any>(sessionData.data.session.access_token);
+        const customClaims = decoded.app_metadata?.custom_claims;
+        
+        if (customClaims) {
+          userRole = customClaims.role || null;
+          adminTier = customClaims.admin_tier || null;
+          vendorApprovalStatus = customClaims.vendor_approval_status || null;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to decode JWT claims:', err);
+    }
+  }
 
   const redirectTo = (path: string) => {
     const redirectResponse = NextResponse.redirect(new URL(path, request.url));
@@ -49,8 +72,6 @@ export async function middleware(request: NextRequest) {
     });
     return redirectResponse;
   };
-
-  const userRole = session?.role;
 
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
