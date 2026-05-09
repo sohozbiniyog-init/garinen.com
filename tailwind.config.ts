@@ -5,12 +5,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: '#7C61D4',
-        'primary-hover': '#674BC4',
-        'primary-soft': '#E7E0FB',
-        secondary: '#6DA8D5',
-        'secondary-hover': '#4F93C7',
-        'secondary-soft': '#E7F3FB',
+        'brand-red': '#E63946',
+        'brand-red-deep': '#C92A39',
+        'brand-black': '#0B0B0C',
+        'brand-gray': '#7D8B94',
+        'brand-surface': '#F7F7F8',
+        'brand-surface-elevated': '#FFFFFF',
+        primary: '#E63946',
+        'primary-hover': '#C92A39',
+        'primary-soft': '#FDEBEC',
+        secondary: '#7D8B94',
+        'secondary-hover': '#67737B',
+        'secondary-soft': '#EEF0F2',
         success: '#16A34A',
         'success-hover': '#15803D',
         warning: '#D97706',
@@ -18,19 +24,19 @@ const config: Config = {
         danger: '#DC2626',
         'danger-hover': '#B91C1C',
         surface: '#FFFFFF',
-        'surface-muted': '#F8FAFC',
+        'surface-muted': '#F7F7F8',
         'surface-elevated': '#FFFFFF',
-        'text-primary': '#111827',
-        'text-secondary': '#6B7280',
-        'text-muted': '#9CA3AF',
+        'text-primary': '#0B0B0C',
+        'text-secondary': '#7D8B94',
+        'text-muted': '#A1A7AE',
         'text-inverse': '#FFFFFF',
-        border: '#E5E7EB',
-        'border-strong': '#D1D5DB',
-        ink: '#101114',
-        sand: '#f4efe7',
-        clay: '#d67b4f',
-        moss: '#395144',
-        smoke: '#6b7280'
+        border: '#E6E8EB',
+        'border-strong': '#CDD3D8',
+        ink: '#0B0B0C',
+        sand: '#F4EFE7',
+        clay: '#E04B55',
+        moss: '#E63946',
+        smoke: '#7D8B94'
       },
       fontFamily: {
         sans: ['var(--font-noto-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -48,12 +54,11 @@ const config: Config = {
         '3xl': '2.5rem'
       },
       backgroundImage: {
-        // lighter overlay so background carousel remains visible through hero
-        'hero-overlay': 'linear-gradient(90deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.12) 48%, rgba(0,0,0,0) 100%)',
-        'primary-wash': 'linear-gradient(135deg, #7C61D4 0%, #6DA8D5 100%)',
-        'warm-accent': 'linear-gradient(135deg, #7C61D4 0%, #D97706 100%)',
-        'surface-glow': 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.98) 100%)',
-        'card-tint': 'linear-gradient(180deg, rgba(124,97,212,0.08) 0%, rgba(109,168,213,0.04) 100%)'
+        'hero-overlay': 'linear-gradient(90deg, rgba(10,10,12,0.78) 0%, rgba(10,10,12,0.42) 48%, rgba(10,10,12,0.08) 100%)',
+        'primary-wash': 'linear-gradient(135deg, #E63946 0%, #B91C1C 100%)',
+        'warm-accent': 'linear-gradient(135deg, #E63946 0%, #7D8B94 100%)',
+        'surface-glow': 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(247,247,248,0.98) 100%)',
+        'card-tint': 'linear-gradient(180deg, rgba(230,57,70,0.08) 0%, rgba(125,139,148,0.03) 100%)'
       }
     }
   },
