@@ -30,7 +30,6 @@ public/*
 *.sql
 *.md
 !README.md
-!AUTH_ARCHITECTURE.md
 *.log
 *.txt
 
