@@ -4,7 +4,7 @@ import {
   jsonWithCookies,
   normalizeIdentifier,
   PendingCookie,
-} from '@/lib/auth-route-helpers';
+} from '@/lib/auth/route-helpers';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -127,3 +127,4 @@ export async function POST(req: NextRequest) {
     return jsonWithCookies({ error: 'Failed to request OTP' }, 500, pendingCookies);
   }
 }
+

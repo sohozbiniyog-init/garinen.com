@@ -1,4 +1,4 @@
-import BuyerWishlistAndApps from '@/components/BuyerWishlistAndApps';
+import BuyerWishlistAndApps from '@/components/buyers/WishlistAndApps';
 
 export default function Page() {
   return (
@@ -9,3 +9,4 @@ export default function Page() {
     </main>
   );
 }
+

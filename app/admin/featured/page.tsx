@@ -1,6 +1,6 @@
 'use client';
 
-import { useFeatured, ListingMini } from '@/lib/featured-context';
+import { useFeatured, ListingMini } from '@/lib/contexts/featured';
 
 export default function AdminFeaturedPage() {
   const { listings, featuredIds, toggleFeatured } = useFeatured();
@@ -36,3 +36,4 @@ export default function AdminFeaturedPage() {
     </main>
   );
 }
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useBankRates, Bank, BankScheme } from '@/lib/bank-rates-context';
+import { useBankRates, Bank, BankScheme } from '@/lib/contexts/bank-rates';
 import { useState } from 'react';
 
 export default function AdminBankRatesPage() {
@@ -111,3 +111,4 @@ function AddSchemeForm({ bankId, addScheme }: { bankId: string; addScheme: (bank
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { LoanApplicationForm, LoanPrefill } from '@/components/loan-application-form';
+import { LoanApplicationForm, LoanPrefill } from '@/components/forms/LoanApplication';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -26,3 +26,4 @@ export default async function BuyerLoanApplyPage({ searchParams }: { searchParam
     </main>
   );
 }
+

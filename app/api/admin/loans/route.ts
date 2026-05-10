@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -25,3 +25,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch loan applications' }, { status: 500 });
   }
 }
+

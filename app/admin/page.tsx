@@ -1,109 +1,126 @@
-import { AdminFeaturedPreview } from '@/components/admin-featured-preview';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { jwtDecode } from 'jwt-decode';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    redirect('/login');
+  }
+
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll() {
+          // Read-only in server component.
+        },
+      },
+    }
+  );
+
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    redirect('/login');
+  }
+
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+
+  if (!token) {
+    redirect('/login');
+  }
+
+  const decoded = jwtDecode<any>(token);
+  const claims = decoded.app_metadata?.custom_claims;
+  const userRole = claims?.role as string | undefined;
+  const adminTier = claims?.admin_tier as string | undefined;
+
+  if (userRole !== 'ADMIN') {
+    redirect(userRole === 'VENDOR' ? '/dashboard/seller' : '/dashboard/buyer');
+  }
+
+  const allowedCards = [
+    {
+      title: 'Vendor Approvals',
+      description: 'Review pending vendor applications and approve or reject them.',
+      href: '/admin/vendors',
+      allowed: true,
+    },
+    {
+      title: 'Admin Management',
+      description: 'Create and manage admin accounts and assign admin tiers.',
+      href: '/admin/admins',
+      allowed: adminTier === 'SUPER_ADMIN',
+    },
+    {
+      title: 'Users & Roles',
+      description: 'Review users, promote vendors, and manage access levels.',
+      href: '/admin/users',
+      allowed: adminTier === 'SUPER_ADMIN',
+    },
+    {
+      title: 'Listings',
+      description: 'Moderate public listings and keep marketplace inventory current.',
+      href: '/admin/listings',
+      allowed: true,
+    },
+    {
+      title: 'Bookings',
+      description: 'Inspect booking activity and coordinate follow-ups.',
+      href: '/admin/bookings',
+      allowed: true,
+    },
+    {
+      title: 'Loan Applications',
+      description: 'Review and manage financing requests from the marketplace.',
+      href: '/admin/loan-applications',
+      allowed: true,
+    },
+  ].filter((card) => card.allowed);
+
   return (
-    <main className="min-h-screen w-full px-6 py-10 lg:px-10">
-      <section className="mb-10">
-        <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Dashboard</p>
-        <h1 className="mt-3 text-4xl font-bold text-white">Admin Console</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-          Manage the marketplace: review listings, assign roles, monitor bookings, and configure financing options.
-        </p>
+    <main className="space-y-8">
+      <section className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Admin Hub</p>
+        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-4xl font-semibold text-white">Admin dashboard</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
+              Use this hub to reach every admin workspace. Super admins get the full management set,
+              while other admin tiers keep access to the operations they are allowed to handle.
+            </p>
+          </div>
+          <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-300">
+            {adminTier ? adminTier.replace('_', ' ') : 'ADMIN'}
+          </div>
+        </div>
       </section>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <a href="/admin/listings" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-moss/10 px-3 py-2">
-              <span className="text-2xl">📋</span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Pending Listings</h2>
-            <p className="text-sm text-smoke">Review and approve car listings</p>
-            <p className="text-xs font-semibold text-moss group-hover:underline">3 awaiting review →</p>
-          </div>
-        </a>
-
-        <a href="/admin/users" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-clay/10 px-3 py-2">
-              <span className="text-2xl">👥</span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Users & Roles</h2>
-            <p className="text-sm text-smoke">Manage users and assign roles</p>
-            <p className="text-xs font-semibold text-clay group-hover:underline">3 pending roles →</p>
-          </div>
-        </a>
-
-        <a href="/admin/bank-rates" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-sand/10 px-3 py-2">
-              <span className="text-2xl">💳</span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Bank Rates</h2>
-            <p className="text-sm text-smoke">Configure EMI financing options</p>
-            <p className="text-xs font-semibold text-sand group-hover:underline">2 banks →</p>
-          </div>
-        </a>
-
-        <a href="/admin/loan-applications" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-gold/10 px-3 py-2">
-              <span className="text-2xl">🏦</span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Loan Applications</h2>
-            <p className="text-sm text-smoke">Review draft applications and submit after in-person docs</p>
-            <p className="text-xs font-semibold text-gold group-hover:underline">View queue →</p>
-          </div>
-        </a>
-
-        <a href="/admin/offers" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-emerald-500/10 px-3 py-2">
-              <span className="text-2xl">🏷️</span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Offers</h2>
-            <p className="text-sm text-smoke">Create admin offers and review vendor submissions</p>
-            <p className="text-xs font-semibold text-emerald-700 group-hover:underline">Manage offers →</p>
-          </div>
-        </a>
-
-        <a href="/admin/featured-reviews" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-yellow-400/10 px-3 py-2">
-              <span className="text-2xl">💬</span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Landing Reviews</h2>
-            <p className="text-sm text-smoke">Curate homepage testimonials from the admin dashboard</p>
-            <p className="text-xs font-semibold text-yellow-600 group-hover:underline">Manage reviews →</p>
-          </div>
-        </a>
-
-        <a href="/admin/custom-order" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-purple/10 px-3 py-2">
-              <span className="text-2xl"></span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Custom Orders</h2>
-            <p className="text-sm text-smoke">Manage custom car import requests from buyers</p>
-            <p className="text-xs font-semibold text-purple group-hover:underline">View requests →</p>
-          </div>
-        </a>
-
-        <a href="/admin/bookings" className="group glass-card overflow-hidden rounded-[2rem] p-6 shadow-soft transition hover:shadow-md">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full bg-sky-500/10 px-3 py-2">
-              <span className="text-2xl">📦</span>
-            </div>
-            <h2 className="text-xl font-bold text-ink">Bookings & Orders</h2>
-            <p className="text-sm text-smoke">View booking requests, test drives, and loan applications</p>
-            <p className="text-xs font-semibold text-sky-500 group-hover:underline">Manage orders →</p>
-          </div>
-        </a>
-
-            <AdminFeaturedPreview />
-      </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {allowedCards.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href as any}
+            className="group rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-white/20 hover:bg-white/[0.06]"
+          >
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Workspace</p>
+            <h2 className="mt-3 text-xl font-semibold text-white transition group-hover:text-rose-200">
+              {card.title}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-slate-300">{card.description}</p>
+            <p className="mt-6 text-sm font-medium text-rose-300">Open section</p>
+          </Link>
+        ))}
+      </section>
     </main>
   );
 }

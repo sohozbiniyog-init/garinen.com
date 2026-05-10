@@ -4,7 +4,7 @@ import {
   jsonWithCookies,
   PendingCookie,
   redirectWithCookies,
-} from '@/lib/auth-route-helpers';
+} from '@/lib/auth/route-helpers';
 
 export async function GET(req: NextRequest) {
   const pendingCookies: PendingCookie[] = [];
@@ -33,3 +33,4 @@ export async function GET(req: NextRequest) {
 
   return redirectWithCookies(data.url, pendingCookies);
 }
+

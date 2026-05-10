@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cacheService } from '@/lib/cache';
+import { cacheService } from '@/lib/utils/cache';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const OFFER_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;

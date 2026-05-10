@@ -1,10 +1,82 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
-import { cacheService } from '@/lib/cache';
+import { cacheService } from '@/lib/utils/cache';
+import { getSessionFromRequest } from '@/lib/auth/helpers';
 
 const ACTIVE_BOOKING_STATUSES = ['PENDING', 'CONFIRMED', 'EMI_APPLIED', 'EMI_PROCESSING', 'EMI_APPROVED'] as const;
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionFromRequest(request);
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where:
+        session.userRole === 'ADMIN'
+          ? undefined
+          : session.userRole === 'VENDOR'
+            ? {
+                listing: {
+                  shop: {
+                    ownerId: session.userId,
+                  },
+                },
+              }
+            : {
+                userId: session.userId,
+              },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            brand: true,
+            model: true,
+            price: true,
+            location: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json(
+      bookings.map((booking) => ({
+        id: booking.id,
+        buyerName: booking.user.name,
+        buyerPhone: booking.user.phone ?? '',
+        listingTitle: booking.listing.title,
+        carPrice: booking.listing.price.toString(),
+        depositAmount: booking.depositAmount?.toString() ?? '0',
+        status: booking.status,
+        createdAt: booking.createdAt.toLocaleString(),
+        userId: booking.userId,
+        listingId: booking.listingId,
+        listing: booking.listing,
+        user: booking.user,
+      })),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,3 +1,9 @@
+/*
+COMMENTED OUT: OTP page no longer needed with password-only authentication flow
+The signup flow now uses direct password registration, redirecting to login after account creation.
+
+Original OTP content:
+
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -173,3 +179,16 @@ export default function OtpPage() {
     </main>
   );
 }
+*/
+
+// Deprecated: OTP flow replaced with password-only authentication
+export default function OtpPage() {
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <h1>OTP Page Disabled</h1>
+      <p>Password-only authentication is now active. This OTP endpoint is no longer in use.</p>
+      <p>Please use /login or /register instead.</p>
+    </div>
+  );
+}
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { showToast } from '@/components/toast';
+import { showToast } from '@/components/common/Toast';
 
 export default function ContactPage() {
   const [name, setName] = useState('');

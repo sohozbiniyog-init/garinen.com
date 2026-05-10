@@ -1,7 +1,8 @@
 'use client';
 
-import { BookingCard } from '@/components/booking-card';
-import { useState } from 'react';
+import { BookingCard } from '@/components/buyers/BookingCard';
+import { createBrowserClient } from '@supabase/ssr';
+import { useEffect, useState } from 'react';
 
 interface Booking {
   id: string;
@@ -38,7 +39,48 @@ const mockBookings: Booking[] = [
 ];
 
 export default function BuyerBookingsPage() {
-  const [bookings] = useState<Booking[]>(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
+
+  useEffect(() => {
+    const loadBookings = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        if (!token) {
+          setError('Please sign in to view your bookings.');
+          return;
+        }
+
+        const response = await fetch('/api/bookings', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load bookings');
+        }
+
+        const data = (await response.json()) as Booking[];
+        setBookings(data);
+      } catch (loadError) {
+        console.error('Failed to load buyer bookings:', loadError);
+        setError('Could not load your bookings right now.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBookings();
+  }, [supabase]);
 
   const pendingCount = bookings.filter((b) => b.status === 'PENDING').length;
   const confirmedCount = bookings.filter((b) => b.status === 'CONFIRMED').length;
@@ -59,7 +101,15 @@ export default function BuyerBookingsPage() {
         </span>
       </div>
 
-      {bookings.length === 0 ? (
+      {loading ? (
+        <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
+          <p className="text-lg font-semibold text-ink">Loading bookings...</p>
+        </div>
+      ) : error ? (
+        <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
+          <p className="text-lg font-semibold text-ink">{error}</p>
+        </div>
+      ) : bookings.length === 0 ? (
         <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
           <p className="text-lg font-semibold text-ink">No bookings yet</p>
           <p className="mt-2 text-sm text-smoke">Browse approved listings and request a booking to get started.</p>
@@ -84,3 +134,4 @@ export default function BuyerBookingsPage() {
     </main>
   );
 }
+

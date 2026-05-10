@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 
 export async function POST(req: Request) {
   try {
@@ -25,10 +25,11 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ ok: true, id: created.id });
+    return NextResponse.json({ ok: true, id: created.id, referenceId: created.id });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Loan API error', err);
     return NextResponse.json({ ok: false, error: 'server_error' }, { status: 500 });
   }
 }
+

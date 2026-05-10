@@ -78,6 +78,24 @@ export async function middleware(request: NextRequest) {
     if (!userRole || userRole !== 'ADMIN') {
       return redirectTo('/login');
     }
+    
+    // Specific tier-based route protection
+    // Only SUPER_ADMIN can create admins
+    if (pathname.startsWith('/admin/admins') && adminTier !== 'SUPER_ADMIN') {
+      return redirectTo('/admin/vendors');
+    }
+    
+    // Only SUPER_ADMIN can manage users
+    if (pathname.startsWith('/admin/users') && adminTier !== 'SUPER_ADMIN') {
+      return redirectTo('/admin/vendors');
+    }
+    
+    // VENDOR_ADMIN and SUPER_ADMIN can access vendors
+    if (pathname.startsWith('/admin/vendors')) {
+      if (adminTier !== 'SUPER_ADMIN' && adminTier !== 'VENDOR_ADMIN' && adminTier !== 'BASIC_ADMIN') {
+        return redirectTo('/admin');
+      }
+    }
   }
 
   // Protect dashboard routes

@@ -1,12 +1,55 @@
+ 'use client';
+
+import { useEffect, useState } from 'react';
+
+type LoanRecord = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  amount: string | null;
+  status: 'DRAFT' | 'FOLLOW_UP_REQUIRED' | 'SUBMITTED' | 'REVIEWING' | 'APPROVED' | 'REJECTED';
+  submittedAt: string | null;
+  createdAt: string;
+  application: Record<string, any>;
+};
+
 export default function AdminLoanApplicationsPage() {
-  const draft = {
-    applicationStatus: 'DRAFT',
-    bank: 'BRAC Bank',
-    vehicle: 'Toyota Corolla 2022',
-    budget: 2500000,
-    downPayment: 250000,
-    documents: ['NID', 'Photo', 'Income proof', 'Address proof'],
-    nextStep: 'Collect personal documents in person, then mark as submitted'
+  const [loans, setLoans] = useState<LoanRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const loadLoans = async () => {
+      try {
+        const response = await fetch('/api/admin/loans');
+        if (!response.ok) {
+          throw new Error('Failed to load loan applications');
+        }
+
+        const data = (await response.json()) as LoanRecord[];
+        setLoans(data);
+      } catch (loadError) {
+        console.error(loadError);
+        setError('Could not load loan applications right now.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLoans();
+  }, []);
+
+  const formatAmount = (amount: string | null) => (amount ? `৳ ${Number(amount).toLocaleString('en-IN')}` : 'N/A');
+  const getBankName = (application: Record<string, any>) => application?.financing?.bankName ?? application?.vehicle?.selectedBankName ?? 'N/A';
+  const getVehicleName = (application: Record<string, any>) => application?.vehicle?.title ?? application?.vehicle?.carTitle ?? application?.vehicle?.listingTitle ?? 'Vehicle not provided';
+  const getLoanAmount = (application: Record<string, any>, fallbackAmount: string | null) => {
+    const loanAmount = application?.financing?.loanAmount ?? application?.vehicle?.loanAmount;
+    if (typeof loanAmount === 'number') {
+      return `৳ ${loanAmount.toLocaleString('en-IN')}`;
+    }
+
+    return formatAmount(fallbackAmount);
   };
 
   return (
@@ -19,33 +62,72 @@ export default function AdminLoanApplicationsPage() {
         </p>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <section className="glass-card rounded-[2rem] p-6 shadow-soft">
-          <h2 className="text-2xl font-bold text-ink">Review Queue</h2>
-          <div className="mt-4 rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
-            No cloud uploads in v1. The buyer must bring documents in person before submission.
-          </div>
-          <div className="mt-4 space-y-3 text-sm text-smoke">
-            <div>Application status: <strong className="text-ink">{draft.applicationStatus}</strong></div>
-            <div>Partner bank: <strong className="text-ink">{draft.bank}</strong></div>
-            <div>Vehicle: <strong className="text-ink">{draft.vehicle}</strong></div>
-            <div>Budget: <strong className="text-ink">৳ {draft.budget.toLocaleString('en-IN')}</strong></div>
-            <div>Down payment: <strong className="text-ink">৳ {draft.downPayment.toLocaleString('en-IN')}</strong></div>
-          </div>
-        </section>
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          {error}
+        </div>
+      ) : null}
 
-        <section className="glass-card rounded-[2rem] p-6 shadow-soft">
-          <h2 className="text-2xl font-bold text-ink">Admin JSON Preview</h2>
-          <p className="mt-2 text-sm text-smoke">This is the normalized payload the backend can later post to partner bank systems.</p>
-          <pre className="mt-4 max-h-[520px] overflow-auto rounded-2xl bg-ink p-4 text-[11px] leading-5 text-white/75">
-{JSON.stringify(draft, null, 2)}
-          </pre>
-          <div className="mt-4 flex gap-3">
-            <button className="rounded-full bg-moss px-4 py-3 text-sm font-semibold text-white">Mark Submitted</button>
-            <button className="rounded-full border border-white/30 bg-white/80 px-4 py-3 text-sm font-semibold text-ink">Needs Info</button>
-          </div>
-        </section>
+      <div className="grid gap-6">
+        {loading ? (
+          <section className="glass-card rounded-[2rem] p-8 text-center text-sm text-slate-600 shadow-soft">
+            Loading loan applications...
+          </section>
+        ) : loans.length === 0 ? (
+          <section className="glass-card rounded-[2rem] p-8 text-center text-sm text-slate-600 shadow-soft">
+            No loan applications found.
+          </section>
+        ) : (
+          loans.map((loan) => (
+            <section key={loan.id} className="glass-card rounded-[2rem] p-6 shadow-soft">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-bold text-ink">{loan.name}</h2>
+                  <p className="mt-1 text-sm text-smoke">{loan.email}{loan.phone ? ` • ${loan.phone}` : ''}</p>
+                </div>
+                <div className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-white">
+                  Reference: {loan.id}
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Status</p>
+                  <p className="mt-2 font-semibold">{loan.status}</p>
+                </div>
+                <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Loan Amount</p>
+                  <p className="mt-2 font-semibold">{getLoanAmount(loan.application, loan.amount)}</p>
+                </div>
+                <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Bank</p>
+                  <p className="mt-2 font-semibold">{getBankName(loan.application)}</p>
+                </div>
+                <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Vehicle</p>
+                  <p className="mt-2 font-semibold">{getVehicleName(loan.application)}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Submission Details</p>
+                <div className="mt-3 grid gap-2 text-sm text-smoke md:grid-cols-2">
+                  <div>Submitted: <strong className="text-ink">{loan.submittedAt ? new Date(loan.submittedAt).toLocaleString() : 'Not yet submitted'}</strong></div>
+                  <div>Created: <strong className="text-ink">{new Date(loan.createdAt).toLocaleString()}</strong></div>
+                  <div>Down payment: <strong className="text-ink">{loan.application?.financing?.downPayment ? `৳ ${Number(loan.application.financing.downPayment).toLocaleString('en-IN')}` : 'N/A'}</strong></div>
+                  <div>Tenure: <strong className="text-ink">{loan.application?.financing?.tenure ? `${loan.application.financing.tenure} months` : 'N/A'}</strong></div>
+                </div>
+              </div>
+
+              <details className="mt-4 rounded-2xl border border-white/30 bg-slate-950 p-4 text-white/80">
+                <summary className="cursor-pointer text-sm font-semibold text-white">View payload</summary>
+                <pre className="mt-4 max-h-[360px] overflow-auto text-[11px] leading-5">{JSON.stringify(loan.application, null, 2)}</pre>
+              </details>
+            </section>
+          ))
+        )}
       </div>
     </main>
   );
 }
+

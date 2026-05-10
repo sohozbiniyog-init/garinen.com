@@ -1,24 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getSessionFromRequest } from '@/lib/auth-helpers';
+import { jwtDecode } from 'jwt-decode';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/db/prisma';
+import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
 
 export async function GET(req: NextRequest) {
+  const pendingCookies: PendingCookie[] = [];
+
   try {
-    // Verify admin session
-    const session = await getSessionFromRequest(req);
-    if (!session || session.userRole !== 'ADMIN') {
+    // Verify admin session via JWT
+    const supabase = createSupabaseRouteClient(req, pendingCookies);
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    // Check admin tier
+    const decoded = jwtDecode<any>(session.access_token);
+    const adminTier = decoded.app_metadata?.custom_claims?.admin_tier;
+
+    if (!adminTier || (adminTier !== 'SUPER_ADMIN' && adminTier !== 'VENDOR_ADMIN' && adminTier !== 'BASIC_ADMIN')) {
+      return NextResponse.json(
+        { error: 'Forbidden: Must be SUPER_ADMIN or VENDOR_ADMIN' },
+        { status: 403 }
+      );
+    }
+
+    // VENDOR_ADMIN: fetch PENDING vendors only (optimized)
+    // SUPER_ADMIN: fetch all vendors
+    const whereClause: Prisma.UserWhereInput = adminTier === 'SUPER_ADMIN'
+      ? { role: 'VENDOR' }
+      : { role: 'VENDOR', vendorApprovalStatus: 'PENDING' };
+
     // Fetch pending vendors
     const vendors = await prisma.user.findMany({
-      where: {
-        role: 'VENDOR',
-        vendorApprovalStatus: 'PENDING',
-      },
+      where: whereClause,
       select: {
         id: true,
         email: true,
@@ -46,3 +66,4 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import { SiteHeader } from '@/components/site-header';
+import { SiteHeader } from '@/components/common/Header';
 
 export default function AuthLayout({
   children,
@@ -12,3 +12,4 @@ export default function AuthLayout({
     </>
   );
 }
+

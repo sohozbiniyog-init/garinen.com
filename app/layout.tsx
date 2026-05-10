@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Fascinate, Fira_Code, Noto_Sans, Geist } from 'next/font/google';
-import { BankRatesProvider } from '@/lib/bank-rates-context';
-import { FeaturedProvider } from '@/lib/featured-context';
-import { SiteFooter } from '@/components/site-footer';
+import { BankRatesProvider } from '@/lib/contexts/bank-rates';
+import { FeaturedProvider } from '@/lib/contexts/featured';
+import { SiteFooter } from '@/components/common/Footer';
 import './globals.css';
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/common";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 

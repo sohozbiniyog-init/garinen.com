@@ -1,7 +1,8 @@
 'use client';
 
-import { BookingCard } from '@/components/booking-card';
-import { useState } from 'react';
+import { BookingCard } from '@/components/buyers/BookingCard';
+import { createBrowserClient } from '@supabase/ssr';
+import { useEffect, useState } from 'react';
 
 interface Booking {
   id: string;
@@ -38,23 +39,84 @@ const mockBookings: Booking[] = [
 ];
 
 export default function SellerBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
 
-  const handleConfirmBooking = (id: string) => {
-    setBookings(bookings.map((b) => (b.id === id ? { ...b, status: 'CONFIRMED' } : b)));
-    setStatusMessage(`Booking ${id} confirmed.`);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
+
+  useEffect(() => {
+    const loadBookings = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        if (!token) {
+          setError('Please sign in to view vendor bookings.');
+          return;
+        }
+
+        const response = await fetch('/api/bookings', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load bookings');
+        }
+
+        const data = (await response.json()) as Booking[];
+        setBookings(data);
+      } catch (loadError) {
+        console.error('Failed to load seller bookings:', loadError);
+        setError('Could not load vendor bookings right now.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBookings();
+  }, [supabase]);
+
+  const updateBooking = async (id: string, status: Booking['status']) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        setStatusMessage('Please sign in again to update bookings.');
+        return;
+      }
+
+      const response = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update booking');
+      }
+
+      setBookings((current) => current.map((booking) => (booking.id === id ? { ...booking, status } : booking)));
+      setStatusMessage(`Booking ${id} ${status.toLowerCase()}.`);
+    } catch (updateError) {
+      console.error('Failed to update booking:', updateError);
+      setStatusMessage('Failed to update booking.');
+    }
   };
 
-  const handleCancelBooking = (id: string) => {
-    setBookings(bookings.map((b) => (b.id === id ? { ...b, status: 'CANCELLED' } : b)));
-    setStatusMessage(`Booking ${id} cancelled.`);
-  };
-
-  const handleApproveEmi = (id: string) => {
-    setBookings(bookings.map((b) => (b.id === id ? { ...b, status: 'EMI_APPROVED' } : b)));
-    setStatusMessage(`EMI for booking ${id} approved.`);
-  };
+  const handleConfirmBooking = (id: string) => void updateBooking(id, 'CONFIRMED');
+  const handleCancelBooking = (id: string) => void updateBooking(id, 'CANCELLED');
+  const handleApproveEmi = (id: string) => void updateBooking(id, 'EMI_APPROVED');
 
   const pendingCount = bookings.filter((b) => b.status === 'PENDING').length;
   const confirmedCount = bookings.filter((b) => b.status === 'CONFIRMED').length;
@@ -81,7 +143,15 @@ export default function SellerBookingsPage() {
         </div>
       )}
 
-      {bookings.length === 0 ? (
+      {loading ? (
+        <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
+          <p className="text-lg font-semibold text-ink">Loading bookings...</p>
+        </div>
+      ) : error ? (
+        <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
+          <p className="text-lg font-semibold text-ink">{error}</p>
+        </div>
+      ) : bookings.length === 0 ? (
         <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
           <p className="text-lg font-semibold text-ink">No bookings yet</p>
           <p className="mt-2 text-sm text-smoke">When buyers request bookings, they will appear here.</p>
@@ -109,3 +179,4 @@ export default function SellerBookingsPage() {
     </main>
   );
 }
+

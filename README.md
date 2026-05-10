@@ -1,28 +1,74 @@
-# GariNen
+# GariNen — Automobile E-Commerce Platform
 
-Initial Next.js 15 scaffold for the GariNen rehaul.
+Next.js 15 + Supabase + Prisma automotive marketplace with admin, vendor, and buyer roles.
 
-## Start
+## Quick Start
 
-1. Install dependencies.
-2. Copy `.env.example` to `.env.local`.
-3. Run `npm run dev`.
+1. Install dependencies: `npm install`
+2. Copy `.env.example` to `.env.local`
+3. Run dev server: `npm run dev`
+4. Open `http://localhost:3000`
+
+## Project Structure
+
+```
+ghuri-automobiles/
+├── app/                    # Next.js App Router
+│   ├── (auth)/            # Auth routes (login, register, reset password)
+│   ├── (public)/          # Public pages (home, listings, about, contact)
+│   ├── admin/             # Admin panel routes
+│   ├── api/               # API endpoints
+│   ├── dashboard/         # User dashboards (buyer, vendor, seller)
+│   ├── vendor/            # Vendor onboarding & profile
+│   └── layout.tsx         # Root layout
+│
+├── components/            # React components
+│   ├── admin/            # Admin-specific components
+│   ├── auth/             # Auth form components
+│   ├── dashboard/        # Dashboard UI components
+│   ├── forms/            # Reusable form components
+│   ├── common/           # Shared components (header, footer, etc.)
+│   ├── vendor/           # Vendor-specific components
+│   └── (individual .tsx) # Legacy: to be reorganized
+│
+├── lib/                   # Utilities & helpers
+│   ├── auth/             # Auth logic (credentials, JWT, profiles)
+│   ├── api/              # API client helpers
+│   ├── db/               # Database helpers
+│   ├── config/           # App configurations
+│   ├── utils/            # General utilities
+│   └── (individual .ts)  # Legacy: to be reorganized
+│
+├── prisma/               # Database schema & migrations
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed.ts
+│
+├── public/               # Static assets
+├── docs/                 # Documentation
+├── config/               # Root-level configs (to create)
+└── package.json
+```
 
 ## Production Database Setup
 
-1. In Supabase, copy the Session pooler connection string and set it as DATABASE_URL.
-2. In Supabase, copy the Direct connection string and set it as DIRECT_URL.
-3. Keep SUPABASE_SERVICE_ROLE_KEY server-side only and never expose it in NEXT_PUBLIC variables.
-4. Run Prisma commands with DIRECT_URL available:
-	- npx prisma generate
-	- npx prisma migrate deploy
-5. Deploy and verify with:
-	- npm run build
-	- API smoke checks for /api/offers and /api/reviews
+1. Supabase Session pooler → `DATABASE_URL`
+2. Supabase Direct connection → `DIRECT_URL`
+3. Keep `SUPABASE_SERVICE_ROLE_KEY` server-side only
+4. Run migrations:
+   ```bash
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+5. Verify build: `npm run build`
 
-## Current status
+## Features
 
-- Next.js app shell created.
-- Landing page started.
-- Prisma schema skeleton added.
-- Route protection placeholder added.
+- ✅ Multi-role auth (Buyer, Vendor, Admin)
+- ✅ Admin tier system (Super, Vendor, Basic)
+- ✅ Vendor approval workflow
+- ✅ Secure password-based sign-in
+- ✅ Role-based dashboards
+- ✅ JWT-based authorization
+- ⏳ Change password + hardcoded admin cleanup
+- ⏳ Rate limiting, 2FA, audit logs

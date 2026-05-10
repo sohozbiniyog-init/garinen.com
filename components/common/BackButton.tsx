@@ -1,0 +1,18 @@
+"use client";
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+export default function BackToDashboard({ base = '/admin', label = 'Back to dashboard' }: { base?: string; label?: string }) {
+  const pathname = usePathname() ?? '';
+  if (pathname === base) return null;
+
+  return (
+    <div className="mb-4">
+      <Link href={base as any} className="text-sm font-semibold text-sky-400 hover:underline">
+        ← {label}
+      </Link>
+    </div>
+  );
+}
+

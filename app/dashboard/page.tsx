@@ -1,48 +1,57 @@
-import Link from 'next/link';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { jwtDecode } from 'jwt-decode';
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardPage() {
-  // In production, this would check the user's actual role from auth
-  // For now, we'll show a role selector for testing
+export default async function DashboardPage() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    redirect('/login');
+  }
 
-  return (
-    <main className="min-h-screen w-full px-6 py-10 lg:px-10">
-      <section className="mb-10">
-        <p className="text-sm uppercase tracking-[0.2em] text-slate-300">User Dashboard</p>
-        <h1 className="mt-3 text-4xl font-bold text-white">Welcome Back</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-          Select your role below to access the appropriate tools and workflows.
-        </p>
-      </section>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Link href="/dashboard/seller" className="group glass-card overflow-hidden rounded-[2rem] p-8 shadow-soft transition hover:shadow-md">
-          <div className="space-y-4">
-            <div className="inline-flex rounded-full bg-clay/10 px-4 py-3">
-              <span className="text-3xl">🏪</span>
-            </div>
-            <h2 className="text-2xl font-bold text-white">Vendor</h2>
-            <p className="text-sm leading-6 text-slate-300">
-              Create and manage listings, track bookings, view sales reports, and handle EMI applications.
-            </p>
-            <p className="text-sm font-semibold text-clay group-hover:underline">Access vendor tools →</p>
-          </div>
-        </Link>
-
-        <Link href="/dashboard/buyer" className="group glass-card overflow-hidden rounded-[2rem] p-8 shadow-soft transition hover:shadow-md">
-          <div className="space-y-4">
-            <div className="inline-flex rounded-full bg-moss/10 px-4 py-3">
-              <span className="text-3xl">🛒</span>
-            </div>
-            <h2 className="text-2xl font-bold text-white">Buyer</h2>
-            <p className="text-sm leading-6 text-slate-300">
-              Browse approved listings, request bookings with deposits, apply for EMI, and track your applications.
-            </p>
-            <p className="text-sm font-semibold text-moss group-hover:underline">Access buyer tools →</p>
-          </div>
-        </Link>
-      </div>
-    </main>
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll() {
+          // Read-only in server component.
+        },
+      },
+    }
   );
+
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    redirect('/login');
+  }
+
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+
+  if (token) {
+    const decoded = jwtDecode<any>(token);
+    const claims = decoded.app_metadata?.custom_claims;
+    const userRole = claims?.role as string | undefined;
+    const adminTier = claims?.admin_tier as string | undefined;
+
+    if (userRole === 'ADMIN') {
+      redirect('/admin');
+    }
+
+    if (userRole === 'VENDOR') {
+      redirect('/dashboard/seller');
+    }
+
+    if (userRole === 'BUYER') {
+      redirect('/dashboard/buyer');
+    }
+  }
+
+  redirect('/login');
 }

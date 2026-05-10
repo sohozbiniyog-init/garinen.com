@@ -1,6 +1,6 @@
 'use client';
 
-import { CustomOrderForm, CustomOrderFormData } from '@/components/custom-order-form';
+import { CustomOrderForm, CustomOrderFormData } from '@/components/forms/CustomOrder';
 import { useEffect, useState } from 'react';
 
 interface CustomOrder {
@@ -253,3 +253,4 @@ export default function CustomOrderPage() {
     </main>
   );
 }
+

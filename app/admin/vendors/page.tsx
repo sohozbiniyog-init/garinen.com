@@ -1,171 +1,214 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { jwtDecode } from 'jwt-decode';
+import { createBrowserClient } from '@supabase/ssr';
+import { showToast } from '@/components/common/Toast';
 
-interface VendorRequest {
+interface VendorApplication {
   id: string;
   email: string;
   name: string;
-  vendorInfo: {
-    shopName: string;
-    description: string;
-    location: string;
-    phone: string;
-    category: string;
-    submittedAt: string;
-  };
-  vendorApprovalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  phone?: string;
+  vendorInfo?: Record<string, any>;
+  vendorApprovalStatus: string;
+  createdAt: string;
 }
 
 export default function VendorApprovalsPage() {
-  const [vendors, setVendors] = useState<VendorRequest[]>([]);
+  const router = useRouter();
+  const [adminTier, setAdminTier] = useState<string | null>(null);
+  const [vendors, setVendors] = useState<VendorApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
+
+  // Check admin tier and fetch vendors on mount
   useEffect(() => {
-    fetchVendors();
-  }, []);
+    const checkTierAndFetchVendors = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        const decoded = jwtDecode<any>(token);
+        const tier = decoded.app_metadata?.custom_claims?.admin_tier;
+
+        if (!tier || (tier !== 'SUPER_ADMIN' && tier !== 'VENDOR_ADMIN' && tier !== 'BASIC_ADMIN')) {
+          showToast('Only admins can access vendor approvals', { type: 'error' });
+          router.push('/login');
+          return;
+        }
+
+        setAdminTier(tier);
+        fetchVendors();
+      } catch (error) {
+        console.error('Failed to verify admin tier:', error);
+        router.push('/login');
+      }
+    };
+
+    checkTierAndFetchVendors();
+  }, [supabase, router]);
 
   const fetchVendors = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/vendors');
-      if (!res.ok) {
-        throw new Error('Failed to fetch vendors');
-      }
+      if (!res.ok) throw new Error('Failed to fetch vendors');
+
       const data = await res.json();
       setVendors(data.vendors || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error) {
+      console.error('Failed to fetch vendors:', error);
+      showToast('Failed to load vendor applications', { type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleApprove = async (vendorId: string) => {
+    setProcessingId(vendorId);
     try {
       const res = await fetch('/api/admin/vendors/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vendorId }),
+        body: JSON.stringify({ userId: vendorId, status: 'APPROVED' }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error('Failed to approve vendor');
+        throw new Error(data.error || 'Failed to approve vendor');
       }
 
-      // Refresh vendor list
-      fetchVendors();
-    } catch (err: any) {
-      alert(err.message);
+      showToast('Vendor approved successfully', { type: 'success' });
+      // Remove from list
+      setVendors(vendors.filter(v => v.id !== vendorId));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to approve vendor';
+      showToast(message, { type: 'error' });
+    } finally {
+      setProcessingId(null);
     }
   };
 
-  const handleReject = async (vendorId: string) => {
-    const reason = prompt('Enter rejection reason:');
-    if (!reason) return;
-
+  const handleDecline = async (vendorId: string) => {
+    setProcessingId(vendorId);
     try {
-      const res = await fetch('/api/admin/vendors/reject', {
+      const res = await fetch('/api/admin/vendors/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vendorId, reason }),
+        body: JSON.stringify({ userId: vendorId, status: 'DECLINED' }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error('Failed to reject vendor');
+        throw new Error(data.error || 'Failed to decline vendor');
       }
 
-      // Refresh vendor list
-      fetchVendors();
-    } catch (err: any) {
-      alert(err.message);
+      showToast('Vendor declined', { type: 'success' });
+      // Remove from list
+      setVendors(vendors.filter(v => v.id !== vendorId));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to decline vendor';
+      showToast(message, { type: 'error' });
+    } finally {
+      setProcessingId(null);
     }
   };
 
+  if (!adminTier) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 rounded bg-white/10" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-ink">ভেন্ডর অনুমোদন</h1>
-        <p className="mt-2 text-sm text-smoke">নতুন ভেন্ডর অ্যাপ্লিকেশন পরীক্ষা এবং অনুমোদন করুন</p>
+        <h1 className="text-3xl font-semibold text-white">Vendor Applications</h1>
+        <p className="mt-2 text-sm text-slate-300">
+          {adminTier === 'SUPER_ADMIN'
+            ? 'Review and approve all vendor applications'
+            : 'Review and approve pending vendor applications'}
+        </p>
       </div>
 
-      {loading && (
-        <div className="rounded-lg border border-black/10 bg-white/50 p-8 text-center">
-          <p className="text-smoke">লোড হচ্ছে...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-clay bg-clay/10 p-4">
-          <p className="text-clay text-sm">{error}</p>
-        </div>
-      )}
-
-      {!loading && vendors.length === 0 && (
-        <div className="rounded-lg border border-black/10 bg-white/50 p-8 text-center">
-          <p className="text-smoke">কোনো পেন্ডিং ভেন্ডর অ্যাপ্লিকেশন নেই</p>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {vendors.map((vendor) => (
-          <div key={vendor.id} className="rounded-lg border border-black/10 bg-white/50 p-6">
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-ink">{vendor.vendorInfo.shopName}</h3>
-                <p className="text-sm text-smoke">{vendor.email} • {vendor.vendorInfo.phone}</p>
-              </div>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                vendor.vendorApprovalStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                vendor.vendorApprovalStatus === 'APPROVED' ? 'bg-moss/10 text-moss' :
-                'bg-clay/10 text-clay'
-              }`}>
-                {vendor.vendorApprovalStatus === 'PENDING' ? 'পেন্ডিং' :
-                 vendor.vendorApprovalStatus === 'APPROVED' ? 'অনুমোদিত' : 'প্রত্যাখ্যাত'}
-              </span>
-            </div>
-
-            <div className="mb-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-xs text-smoke">অবস্থান</p>
-                <p className="font-medium text-ink">{vendor.vendorInfo.location}</p>
-              </div>
-              <div>
-                <p className="text-xs text-smoke">বিভাগ</p>
-                <p className="font-medium text-ink capitalize">{vendor.vendorInfo.category}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs text-smoke">বর্ণনা</p>
-                <p className="font-medium text-ink line-clamp-2">{vendor.vendorInfo.description}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs text-smoke">জমা দেওয়ার সময়</p>
-                <p className="font-medium text-ink">
-                  {new Date(vendor.vendorInfo.submittedAt).toLocaleDateString('bn-BD')}
-                </p>
-              </div>
-            </div>
-
-            {vendor.vendorApprovalStatus === 'PENDING' && (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleApprove(vendor.id)}
-                  className="flex-1 rounded-lg bg-moss px-4 py-2 font-semibold text-white hover:opacity-90 transition-opacity"
-                >
-                  অনুমোদন করুন
-                </button>
-                <button
-                  onClick={() => handleReject(vendor.id)}
-                  className="flex-1 rounded-lg border border-clay bg-white/50 px-4 py-2 font-semibold text-clay hover:bg-clay/5 transition-colors"
-                >
-                  প্রত্যাখ্যান করুন
-                </button>
-              </div>
-            )}
+      {/* Vendor List */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        {loading ? (
+          <div className="animate-pulse space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-24 rounded bg-white/5" />
+            ))}
           </div>
-        ))}
+        ) : vendors.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-lg font-semibold text-slate-300">No pending vendor applications</p>
+            <p className="mt-1 text-sm text-slate-400">All vendor applications have been reviewed</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {vendors.map(vendor => (
+              <div
+                key={vendor.id}
+                className="flex flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center"
+              >
+                <div className="flex-1">
+                  <p className="font-semibold text-white">{vendor.name}</p>
+                  <p className="text-sm text-slate-400">{vendor.email}</p>
+                  {vendor.phone && (
+                    <p className="text-sm text-slate-400">{vendor.phone}</p>
+                  )}
+                  {vendor.vendorInfo?.shopName && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Shop: {vendor.vendorInfo.shopName}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-slate-500">
+                    Applied: {new Date(vendor.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-3 flex gap-2 sm:mt-0">
+                  <button
+                    onClick={() => handleApprove(vendor.id)}
+                    disabled={processingId === vendor.id}
+                    className="rounded-lg bg-moss px-4 py-2 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {processingId === vendor.id ? 'Processing...' : 'Approve'}
+                  </button>
+                  <button
+                    onClick={() => handleDecline(vendor.id)}
+                    disabled={processingId === vendor.id}
+                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {processingId === vendor.id ? 'Processing...' : 'Decline'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

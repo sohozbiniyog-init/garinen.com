@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import WishlistButton from '@/components/WishlistButton';
-import { BANGLADESH_DIVISIONS } from '@/lib/bangladesh-divisions';
+import WishlistButton from '@/components/buyers/WishlistButton';
+import { BANGLADESH_DIVISIONS } from '@/lib/config/divisions';
 
 interface Listing {
   id: string;
@@ -17,75 +17,6 @@ interface Listing {
   shopName: string;
   condition: 'new' ;
 }
-
-const mockListings: Listing[] = [
-  {
-    id: '1',
-    title: 'Toyota Corolla 2024 - Brand New',
-    brand: 'Toyota',
-    model: 'Corolla',
-    year: 2024,
-    price: 2500000,
-    location: 'Dhaka',
-    shopName: 'Elite Motors',
-    condition: 'new'
-  },
-  {
-    id: '2',
-    title: 'Honda Civic 2024 - Brand New',
-    brand: 'Honda',
-    model: 'Civic',
-    year: 2024,
-    price: 2200000,
-    location: 'Dhaka',
-    shopName: 'City Auto Sales',
-    condition: 'new'
-  },
-  {
-    id: '3',
-    title: 'Hyundai Elantra 2024 - Brand New',
-    brand: 'Hyundai',
-    model: 'Elantra',
-    year: 2024,
-    price: 1800000,
-    location: 'Chittagong',
-    shopName: 'Supreme Automobiles',
-    condition: 'new'
-  },
-  {
-    id: '4',
-    title: 'Nissan Altima 2024 - Brand New',
-    brand: 'Nissan',
-    model: 'Altima',
-    year: 2024,
-    price: 1600000,
-    location: 'Dhaka',
-    shopName: 'Prime Auto Group',
-    condition: 'new'
-  },
-  {
-    id: '5',
-    title: 'Mazda CX-5 2024 - Brand New SUV',
-    brand: 'Mazda',
-    model: 'CX-5',
-    year: 2024,
-    price: 2400000,
-    location: 'Sylhet',
-    shopName: 'Family Motors',
-    condition: 'new'
-  },
-  {
-    id: '6',
-    title: 'Ford Focus 2024 - Brand New Economy Car',
-    brand: 'Ford',
-    model: 'Focus',
-    year: 2024,
-    price: 1400000,
-    location: 'Khulna',
-    shopName: 'Value Cars',
-    condition: 'new'
-  }
-];
 
 // Price range mapping for budget filters
 const budgetToPriceRange: Record<string, { min: number; max: number }> = {
@@ -107,6 +38,9 @@ function ListingsContent() {
   const [budgetFilter, setBudgetFilter] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Load budget from URL params on mount
   useEffect(() => {
@@ -126,10 +60,47 @@ function ListingsContent() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const loadListings = async () => {
+      try {
+        const response = await fetch('/api/listings');
+        if (!response.ok) {
+          throw new Error('Failed to load listings');
+        }
+
+        const data = (await response.json()) as Array<{
+          id: string;
+          title: string;
+          brand: string;
+          model: string;
+          year: number;
+          price: string;
+          location: string;
+          shopName: string;
+        }>;
+
+        setListings(
+          data.map((listing) => ({
+            ...listing,
+            price: Number(listing.price),
+            condition: 'new' as const,
+          }))
+        );
+      } catch (loadError) {
+        console.error('Failed to load listings:', loadError);
+        setError('Could not load listings right now.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadListings();
+  }, []);
+
   const brands = ['Audi', 'BMW', 'Chevrolet', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Kia', 'Lexus', 'Mazda', 'Mercedes-Benz', 'Mitsubishi', 'Nissan', 'Suzuki', 'Tata', 'Toyota'];
   const locations = [...BANGLADESH_DIVISIONS];
 
-  let results = mockListings.filter((listing) =>
+  let results = listings.filter((listing) =>
     searchBrand === '' || listing.brand.toLowerCase().includes(searchBrand.toLowerCase())
   );
 
@@ -168,6 +139,12 @@ function ListingsContent() {
           {filteredListings.length} approved car{filteredListings.length !== 1 ? 's' : ''} available for viewing and booking.
         </p>
       </section>
+
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          {error}
+        </div>
+      ) : null}
 
       <div className="glass-card mb-6 rounded-[2rem] p-5 shadow-soft">
         <div className="grid gap-5 lg:grid-cols-5">
@@ -268,7 +245,11 @@ function ListingsContent() {
         </div>
       </div>
 
-      {filteredListings.length === 0 ? (
+      {loading ? (
+        <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
+          <p className="text-lg font-semibold text-ink">Loading listings...</p>
+        </div>
+      ) : filteredListings.length === 0 ? (
         <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
           <p className="text-lg font-semibold text-ink">No listings found</p>
           <p className="mt-2 text-sm text-slate-600">Try searching by a different brand.</p>

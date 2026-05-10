@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getSessionFromRequest } from '@/lib/auth-helpers';
+import { prisma } from '@/lib/db/prisma';
+import { getSessionFromRequest } from '@/lib/auth/helpers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,3 +66,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

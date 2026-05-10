@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { syncUserProfile } from '@/lib/auth-profile';
+import { syncUserProfile } from '@/lib/auth/profile';
 import {
   createSupabaseRouteClient,
   jsonWithCookies,
   normalizeIdentifier,
   PendingCookie,
-} from '@/lib/auth-route-helpers';
+} from '@/lib/auth/route-helpers';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -162,3 +162,4 @@ export async function POST(req: NextRequest) {
     return jsonWithCookies({ error: 'Failed to verify OTP' }, 500, pendingCookies);
   }
 }
+

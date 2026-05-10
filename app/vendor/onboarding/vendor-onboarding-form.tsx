@@ -71,12 +71,12 @@ export default function VendorOnboardingForm() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl items-center px-6 py-10">
-      <div className="w-full rounded-[2rem] border border-black/10 bg-white/85 p-8 shadow-soft">
+      <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-8">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-smoke">ভেন্ডর অনবোর্ডিং</p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">আপনার ব্যবসায়িক তথ্য পূরণ করুন</h1>
-          <p className="mt-4 text-sm leading-6 text-smoke">
-            আপনার ব্যবসায়িক তথ্য পূরণ করুন। আমাদের প্রশাসক দল আপনার আবেদন পর্যালোচনা করবে এবং অনুমোদন করবে।
+          <p className="text-sm uppercase tracking-[0.2em] text-slate-400">ভেন্ডর অনবোর্ডিং</p>
+          <h1 className="mt-2 text-3xl font-semibold text-white">আপনার ব্যবসায়িক তথ্য পূরণ করুন</h1>
+          <p className="mt-4 text-sm leading-6 text-slate-300">
+            সংক্ষিপ্ত তথ্য জমা দিন। প্রশাসক দল পরে পর্যালোচনা করবে।
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export default function VendorOnboardingForm() {
               value={shopName}
               onChange={(e) => setShopName(e.target.value)}
               placeholder="আপনার ব্যবসার নাম"
-              className="mt-2 w-full rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink placeholder-smoke"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400"
             />
           </div>
 
@@ -105,7 +105,7 @@ export default function VendorOnboardingForm() {
               name="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="mt-2 w-full rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
             >
               <option value="">বিভাগ নির্বাচন করুন</option>
               <option value="used-cars">ব্যবহৃত গাড়ি বিক্রয়কারী</option>
@@ -128,9 +128,9 @@ export default function VendorOnboardingForm() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="আপনার ব্যবসা সম্পর্কে বলুন... (কমপক্ষে ৫০ অক্ষর)"
               rows={5}
-              className="mt-2 w-full rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink placeholder-smoke"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400"
             />
-            <p className="mt-1 text-xs text-smoke">{description.length} / ৫০০ অক্ষর</p>
+            <p className="mt-1 text-xs text-slate-400">{description.length} / ৫০০ অক্ষর</p>
           </div>
 
           <div>
@@ -144,7 +144,7 @@ export default function VendorOnboardingForm() {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="শহর, এলাকা বা অঞ্চল"
-              className="mt-2 w-full rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink placeholder-smoke"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400"
             />
           </div>
 
@@ -159,31 +159,31 @@ export default function VendorOnboardingForm() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+8801234567890"
-              className="mt-2 w-full rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink placeholder-smoke"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400"
             />
           </div>
 
-          {error && <p className="text-sm text-clay font-semibold">{error}</p>}
+          {error && <p className="text-sm font-semibold text-red-200">{error}</p>}
 
           <div className="flex gap-3 pt-6">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-lg bg-moss px-6 py-3 font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 rounded-lg bg-white px-6 py-3 font-semibold text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'জমা দিচ্ছি...' : 'তথ্য জমা দিন'}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
-              className="rounded-lg border border-black/10 px-6 py-3 font-semibold text-ink hover:bg-black/5 transition-colors"
+              className="rounded-lg border border-white/10 px-6 py-3 font-semibold text-white hover:bg-white/10 transition-colors"
             >
               ফিরে যান
             </button>
           </div>
         </form>
 
-        <p className="mt-8 text-xs text-smoke text-center">
+        <p className="mt-8 text-center text-xs text-slate-400">
           আপনার তথ্য সুরক্ষিত এবং শুধুমাত্র প্রশাসক দলের দ্বারা দেখা হবে।
         </p>
       </div>

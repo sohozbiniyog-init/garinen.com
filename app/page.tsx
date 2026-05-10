@@ -1,10 +1,10 @@
-import FeaturedCarousel from '@/components/featured-carousel';
-import EmiCalculator from '@/components/emi-calculator';
-import { SiteHeader } from '@/components/site-header';
-import NewCarsCarousel from '@/components/new-cars-carousel';
-import HeroSearchForm from '@/components/hero-search-form';
-import { CustomerTestimonials } from '@/components/customer-testimonials';
-import { OffersShowcase, PublicOffer } from '@/components/offers-showcase';
+import FeaturedCarousel from '@/components/listings/FeaturedCarousel';
+import EmiCalculator from '@/components/landing/EMICalculator';
+import { SiteHeader } from '@/components/common/Header';
+import NewCarsCarousel from '@/components/landing/NewCarsCarousel';
+import HeroSearchForm from '@/components/landing/HeroSearch';
+import { CustomerTestimonials } from '@/components/landing/Testimonials';
+import { OffersShowcase, PublicOffer } from '@/components/landing/Offers';
 import { headers } from 'next/headers';
 
 const highlights = [

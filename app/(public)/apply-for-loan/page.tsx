@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useBankRates } from '@/lib/bank-rates-context';
+import { useBankRates } from '@/lib/contexts/bank-rates';
 
 interface LoanApplication {
   fullName: string;
@@ -23,6 +23,9 @@ export default function ApplyForLoanPage() {
   const [step, setStep] = useState<'personal' | 'financial' | 'vehicle' | 'review' | 'submitted'>(
     'personal'
   );
+  const [referenceId, setReferenceId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [application, setApplication] = useState<Partial<LoanApplication>>({
     employmentType: 'employed',
     carPrice: 2500000,
@@ -69,6 +72,67 @@ export default function ApplyForLoanPage() {
       (Math.pow(1 + monthlyRate, tenure) - 1));
 
   const formatBDT = (n: number) => '৳ ' + Math.round(n).toLocaleString('en-IN');
+
+  const submitApplication = async () => {
+    if (!application.fullName || !application.email || !application.phone || !application.nid) {
+      setSubmitError('Please complete the personal details before submitting.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const response = await fetch('/api/loan-applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          application: {
+            buyerName: application.fullName,
+            contactEmail: application.email,
+            phone: application.phone,
+            buyer: {
+              name: application.fullName,
+              email: application.email,
+              phone: application.phone,
+              nid: application.nid,
+              monthlyIncome: application.monthlyIncome,
+              employmentType: application.employmentType,
+            },
+            vehicle: {
+              carPrice: application.carPrice,
+              downPayment,
+              loanAmount,
+              tenure: application.tenure,
+              selectedBankId: application.selectedBankId,
+              selectedBankName: selectedBank?.name,
+              selectedSchemeId: application.selectedSchemeId,
+              selectedSchemeName: selectedScheme?.name,
+            },
+            financing: {
+              loanAmount,
+              downPayment,
+              tenure: application.tenure,
+              monthlyIncome: application.monthlyIncome,
+              emi: Math.round(emi),
+            },
+          },
+          status: 'SUBMITTED',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to submit application');
+
+      const data = await response.json();
+      setReferenceId(data?.referenceId ?? data?.id ?? '');
+      setStep('submitted');
+    } catch (error) {
+      console.error(error);
+      setSubmitError('Unable to submit right now. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const steps_list = [
     { id: 'personal', label: 'Personal', order: 1 },
@@ -139,7 +203,7 @@ export default function ApplyForLoanPage() {
             Your loan application has been submitted successfully. We'll review your application and contact you within 24 hours.
           </p>
           <p className="mt-3 text-sm font-semibold text-moss">
-            Reference ID: {Math.random().toString(36).substring(7).toUpperCase()}
+            Reference ID: {referenceId || 'PENDING'}
           </p>
           <a
             href="/"
@@ -386,6 +450,12 @@ export default function ApplyForLoanPage() {
               </div>
             )}
 
+            {submitError ? (
+              <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                {submitError}
+              </div>
+            ) : null}
+
             {/* Action Buttons */}
             <div className="mt-8 flex gap-4 border-t border-black/5 pt-6">
               {step !== 'personal' && (
@@ -401,10 +471,18 @@ export default function ApplyForLoanPage() {
                 </button>
               )}
               <button
-                onClick={handleSubmit}
-                className="flex-1 rounded-lg bg-moss px-4 py-3 text-sm font-semibold text-white transition hover:bg-opacity-90"
+                onClick={() => {
+                  if (step === 'review') {
+                    void submitApplication();
+                    return;
+                  }
+
+                  handleSubmit();
+                }}
+                disabled={isSubmitting}
+                className="flex-1 rounded-lg bg-moss px-4 py-3 text-sm font-semibold text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {step === 'review' ? 'Submit Application' : 'Next'}
+                {step === 'review' ? (isSubmitting ? 'Submitting…' : 'Submit Application') : 'Next'}
               </button>
             </div>
           </div>
@@ -413,3 +491,4 @@ export default function ApplyForLoanPage() {
     </main>
   );
 }
+

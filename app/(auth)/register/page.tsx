@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { AuthCard } from '@/components/auth-card';
+import { AuthCard } from '@/components/auth/Card';
 
 function RegisterContent() {
   return (

@@ -1,7 +1,7 @@
 'use client';
 
-import { CreateListingForm, ListingFormData } from '@/components/create-listing-form';
-import { SellerListingCard } from '@/components/seller-listing-card';
+import { CreateListingForm, ListingFormData } from '@/components/forms/CreateListing';
+import { SellerListingCard } from '@/components/listings/SellerCard';
 import { useState } from 'react';
 
 interface Listing {
@@ -74,7 +74,7 @@ export default function SellerListingsPage() {
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Vendor Tools</p>
         <h1 className="mt-3 text-4xl font-bold text-white">My Listings</h1>
         <p className="mt-3 text-sm leading-7 text-slate-300">
-          Manage your car listings. New listings are pending admin approval before appearing on the marketplace.
+          Manage your car listings. New listings are pending admin approval before appearing on the marketplace. Images and videos are added by admin only.
         </p>
       </section>
 
@@ -88,6 +88,10 @@ export default function SellerListingsPage() {
         <span className="text-sm text-smoke">
           {listings.length} listing{listings.length !== 1 ? 's' : ''} • {listings.filter((l) => l.status === 'APPROVED').length} approved
         </span>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-sky-200/40 bg-sky-50/70 px-4 py-3 text-sm text-slate-700">
+        Seller listings do not support image or video uploads. Media is managed by admins after moderation.
       </div>
 
       {statusMessage && (
@@ -129,3 +133,4 @@ export default function SellerListingsPage() {
     </main>
   );
 }
+

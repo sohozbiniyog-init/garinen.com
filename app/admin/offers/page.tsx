@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -303,4 +303,5 @@ export default function AdminOffersPage() {
     </main>
   );
 }
+
 

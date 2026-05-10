@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { exportToCSV, prepareBookingsForCSV, prepareTestDrivesForCSV, prepareLoansForCSV } from '@/lib/csv-export';
-import { showToast } from '@/components/toast';
+import { exportToCSV, prepareBookingsForCSV, prepareTestDrivesForCSV, prepareLoansForCSV } from '@/lib/utils/csv-export';
+import { showToast } from '@/components/common/Toast';
 
 interface BookingWithRelations {
   id: string;
@@ -138,12 +138,12 @@ export default function AdminBookingsPage() {
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Dashboard</p>
         <h1 className="mt-3 text-4xl font-bold text-white">Booking Requests & Orders</h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-          Manage booking requests, test drive scheduling, and loan applications from buyers.
+          Manage booking requests, test drives, and loan applications in a compact admin view.
         </p>
       </section>
 
       {/* Tab Navigation */}
-      <div className="mb-8 flex gap-4 border-b border-white/20">
+      <div className="mb-8 flex gap-4 border-b border-white/10">
         <button
           onClick={() => setActiveTab('bookings')}
           className={`px-4 py-3 font-semibold text-sm transition ${
@@ -182,7 +182,7 @@ export default function AdminBookingsPage() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-moss"
+            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/20"
           >
             <option value="">All Bookings</option>
             <option value="PENDING">Pending</option>
@@ -194,7 +194,7 @@ export default function AdminBookingsPage() {
         <button
           onClick={handleExportCSV}
           disabled={activeTab === 'bookings' ? filteredBookings.length === 0 : loans.length === 0}
-          className="rounded-lg bg-moss px-6 py-2 font-semibold text-white transition hover:bg-opacity-90 disabled:opacity-50"
+          className="rounded-lg bg-white px-6 py-2 font-semibold text-slate-900 transition hover:bg-opacity-90 disabled:opacity-50"
         >
           Export as CSV
         </button>
@@ -204,18 +204,18 @@ export default function AdminBookingsPage() {
       {activeTab === 'bookings' && (
         <div className="grid gap-4">
           {loading ? (
-            <div className="rounded-lg border border-white/20 bg-white/5 p-8 text-center text-slate-400">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-300">
               Loading bookings...
             </div>
           ) : filteredBookings.length === 0 ? (
-            <div className="rounded-lg border border-white/20 bg-white/5 p-8 text-center text-slate-400">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-300">
               No booking requests found
             </div>
           ) : (
             filteredBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="glass-card rounded-2xl p-6 transition hover:shadow-md"
+                className="rounded-2xl border border-white/10 bg-white/5 p-6"
               >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <div>
@@ -309,3 +309,4 @@ export default function AdminBookingsPage() {
     </main>
   );
 }
+

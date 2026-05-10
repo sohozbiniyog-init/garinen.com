@@ -1,10 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { verifyAdminCredentials } from '@/lib/auth-admin-db';
-import { syncUserProfile } from '@/lib/auth-profile';
-import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth-route-helpers';
+import { verifyAdminCredentials } from '@/lib/auth/admin-db';
+import { syncUserProfile } from '@/lib/auth/profile';
+import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -24,12 +24,13 @@ export async function POST(request: NextRequest) {
     const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
     const isVendor = Boolean(body.isVendor);
 
-    if (!email || !password || !mode) {
+    if (!email || !mode || (mode === 'signin' && !password)) {
       return jsonWithCookies({ error: 'Missing required fields' }, 400, pendingCookies);
     }
 
-    if (mode === 'signup' && !name) {
-      return jsonWithCookies({ error: 'Name is required for sign up' }, 400, pendingCookies);
+    // Validate password is provided for signup
+    if (mode === 'signup' && !password) {
+      return jsonWithCookies({ error: 'Password is required for sign up' }, 400, pendingCookies);
     }
 
     const supabase = createSupabaseRouteClient(request, pendingCookies);
@@ -63,11 +64,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Password-based signup (no OTP)
     const authResult =
       mode === 'signup'
         ? await supabase.auth.signUp({
             email: authEmail,
-            password,
+            password: password,
             options: {
               data: {
                 full_name: name,
@@ -102,9 +104,14 @@ export async function POST(request: NextRequest) {
 
     const inferredRole = adminBootstrap
       ? 'ADMIN'
+      : 'BUYER'; // All new users start as BUYER, vendor approval is separate
+    
+    // Determine vendor approval status
+    const vendorApprovalStatus = adminBootstrap
+      ? currentProfile?.vendorApprovalStatus ?? undefined
       : mode === 'signup' && isVendor
-        ? 'VENDOR'
-        : currentProfile?.role ?? 'BUYER';
+        ? 'PENDING' // Vendor signups stay PENDING until admin approves
+        : currentProfile?.vendorApprovalStatus ?? undefined;
 
     const existingProfile = await syncUserProfile({
       email: authUser.email ?? authEmail,
@@ -112,12 +119,7 @@ export async function POST(request: NextRequest) {
       phone: adminBootstrap?.phone || phone || (authUser.user_metadata?.phone as string | undefined),
       role: inferredRole,
       adminTier: adminBootstrap?.tier ?? currentProfile?.adminTier ?? undefined,
-      vendorApprovalStatus:
-        adminBootstrap
-          ? currentProfile?.vendorApprovalStatus ?? undefined
-          : inferredRole === 'VENDOR'
-            ? currentProfile?.vendorApprovalStatus ?? 'PENDING'
-            : currentProfile?.vendorApprovalStatus ?? undefined,
+      vendorApprovalStatus
     });
 
     // Set Supabase Custom Claims for JWT-based role propagation
@@ -141,30 +143,28 @@ export async function POST(request: NextRequest) {
     }
 
     const redirectTo =
-      adminBootstrap || existingProfile.role === 'ADMIN'
-        ? '/admin'
-        : existingProfile.role === 'VENDOR'
-          ? existingProfile.vendorApprovalStatus === 'PENDING'
-            ? '/vendor/onboarding'
-            : '/dashboard/seller'
-          : '/dashboard';
+      mode === 'signup'
+        ? '/login' // After signup, redirect to login for user confirmation
+        : adminBootstrap || existingProfile.role === 'ADMIN'
+          ? '/admin'
+          : existingProfile.role === 'VENDOR'
+            ? existingProfile.vendorApprovalStatus === 'PENDING'
+              ? '/vendor/onboarding'
+              : '/dashboard/seller'
+            : '/dashboard/buyer';
 
-    const requiresVerification = mode === 'signup' && !session;
-
+    // Password signup doesn't require verification
     return jsonWithCookies(
       {
         success: true,
-        requiresVerification,
-        redirectTo: requiresVerification ? '/login?message=check-email' : redirectTo,
+        redirectTo,
         user: existingProfile,
-        session: session
-          ? {
-              accessToken: session.access_token,
-              expiresAt: session.expires_at,
-            }
-          : null,
+        session: mode === 'signin' && session ? {
+          accessToken: session.access_token,
+          expiresAt: session.expires_at,
+        } : null,
       },
-      requiresVerification ? 202 : 200,
+      200,
       pendingCookies
     );
   } catch (error) {

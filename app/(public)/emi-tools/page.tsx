@@ -1,4 +1,4 @@
-import EmiCalculator from '@/components/emi-calculator';
+import EmiCalculator from '@/components/landing/EMICalculator';
 
 export default function EmiToolsPage() {
   return (
@@ -68,3 +68,4 @@ export default function EmiToolsPage() {
     </main>
   );
 }
+

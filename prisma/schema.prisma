@@ -134,6 +134,8 @@ model Listing {
   price      Decimal       @db.Decimal(12, 2)
   mileage    Int?
   location   String
+  imageUrls  Json?
+  videoUrls  Json?
   status     ListingStatus @default(PENDING)
   adminNotes String?
   createdAt  DateTime      @default(now())
@@ -279,4 +281,20 @@ model LoanApplication {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId, status, createdAt])
+}
+
+model AdminAccount {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  phone         String?
+  passwordHash  String
+  tier          AdminTier
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tier])
+  @@index([createdBy])
+  @@index([email])
 }

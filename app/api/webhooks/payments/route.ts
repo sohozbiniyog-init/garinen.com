@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { cacheService } from '@/lib/cache';
+import { prisma } from '@/lib/db/prisma';
+import { cacheService } from '@/lib/utils/cache';
 import crypto from 'crypto';
 
 /**
@@ -137,3 +137,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

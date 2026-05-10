@@ -1,12 +1,12 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
-import { syncUserProfile } from '@/lib/auth-profile';
+import { syncUserProfile } from '@/lib/auth/profile';
 import {
   createSupabaseRouteClient,
   PendingCookie,
   redirectWithCookies,
-} from '@/lib/auth-route-helpers';
+} from '@/lib/auth/route-helpers';
 
 export async function GET(req: NextRequest) {
   const pendingCookies: PendingCookie[] = [];

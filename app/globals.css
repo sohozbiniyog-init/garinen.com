@@ -327,3 +327,60 @@ select:-moz-autofill {
   box-shadow: 0 0 0 1000px #ffffff inset !important;
   -moz-text-fill-color: #0f172a !important;
 }
+
+/* Minimal admin/vendor UI overrides */
+.admin-minimal .glass-card,
+.admin-minimal .glass-panel,
+.admin-minimal .glass-shell {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.admin-minimal .glass-card-strong {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.admin-minimal .glass-field {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-minimal button {
+  background: rgba(230, 57, 70, 0.8);
+  box-shadow: none;
+  border: 1px solid rgba(230, 57, 70, 0.6);
+}
+
+.vendor-minimal .glass-card,
+.vendor-minimal .glass-panel,
+.vendor-minimal .glass-shell {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.vendor-minimal .glass-card-strong {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.vendor-minimal .glass-field {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vendor-minimal button {
+  background: rgba(230, 57, 70, 0.8);
+  box-shadow: none;
+  border: 1px solid rgba(230, 57, 70, 0.6);
+}
