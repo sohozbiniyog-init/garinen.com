@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { createSupabaseRouteClient, jsonWithCookies, type PendingCookie } from '@/lib/auth/route-helpers';
 import { normalizeBangladeshPhone } from '@/lib/auth/phone';
-import { PROFESSION_VALUES, sanitizeProfession, type ProfessionType } from '@/lib/professions';
+import { sanitizeProfession } from '@/lib/professions';
 
 function sanitizeName(input: unknown): string | null {
   if (typeof input !== 'string') return null;
@@ -104,7 +104,7 @@ export async function PATCH(request: NextRequest) {
       data: {
         name,
         phone: normalizedPhone,
-        profession: (profession || null) as any,
+        profession: profession || null,
       },
       select: profileSelect(),
     });

@@ -4,6 +4,7 @@
  */
 
 export const PROFESSION_VALUES = new Set([
+  'EMPLOYEE',
   'BUSINESSMAN',
   'ENGINEER',
   'DOCTOR',
@@ -18,6 +19,7 @@ export const PROFESSION_VALUES = new Set([
 ]);
 
 export type ProfessionType =
+  | 'EMPLOYEE'
   | 'BUSINESSMAN'
   | 'ENGINEER'
   | 'DOCTOR'
@@ -35,6 +37,7 @@ export const PROFESSION_OPTIONS: Array<{ value: ProfessionType; label: string }>
   { value: '', label: 'Select profession' },
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'ENGINEER', label: 'Engineer' },
+  { value: 'EMPLOYEE', label: 'Employee' },
   { value: 'BUSINESSMAN', label: 'Businessman' },
   { value: 'EMPLOYEE_GOVT', label: 'Government Employee' },
   { value: 'EMPLOYEE_PVT', label: 'Private Employee' },

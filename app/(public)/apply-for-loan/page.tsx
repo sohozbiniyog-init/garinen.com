@@ -1,23 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBankRates } from '@/lib/contexts/bank-rates';
+import { PROFESSION_OPTIONS, type ProfessionType } from '@/lib/professions';
 
 interface LoanApplication {
   fullName: string;
   email: string;
   phone: string;
-  nid: string;
   carPrice: number;
   downPayment: number;
   tenure: number;
   selectedBankId: string;
   selectedSchemeId: string;
   monthlyIncome: number;
-  employmentType: 'employed' | 'self-employed' | 'business-owner';
+  employmentType: ProfessionType;
   documents: string[];
 }
+
+type BuyerProfile = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  profession?: ProfessionType | null;
+} | null;
 
 export default function ApplyForLoanPage() {
   const { banks } = useBankRates();
@@ -28,12 +35,43 @@ export default function ApplyForLoanPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [application, setApplication] = useState<Partial<LoanApplication>>({
-    employmentType: 'employed',
+    employmentType: '',
     carPrice: 2500000,
     tenure: 48,
     selectedBankId: banks[0]?.id,
     selectedSchemeId: banks[0]?.schemes?.[0]?.id,
   });
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      try {
+        const res = await fetch('/api/auth/profile', { cache: 'no-store' });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as { profile?: BuyerProfile };
+        const profile = data.profile;
+        if (!active || !profile) return;
+
+        setApplication((prev) => ({
+          ...prev,
+          fullName: prev.fullName || profile.name || '',
+          email: prev.email || profile.email || '',
+          phone: prev.phone || profile.phone || '',
+          employmentType: prev.employmentType || profile.profession || '',
+        }));
+      } catch {
+        return;
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const selectedBank = banks.find((b) => b.id === application.selectedBankId);
   const selectedScheme = selectedBank?.schemes?.find((s) => s.id === application.selectedSchemeId);
@@ -75,7 +113,7 @@ export default function ApplyForLoanPage() {
   const formatBDT = (n: number) => '৳ ' + Math.round(n).toLocaleString('en-IN');
 
   const submitApplication = async () => {
-    if (!application.fullName || !application.email || !application.phone || !application.nid) {
+    if (!application.fullName || !application.email || !application.phone) {
       setSubmitError('Please complete the personal details before submitting.');
       return;
     }
@@ -92,14 +130,13 @@ export default function ApplyForLoanPage() {
             buyerName: application.fullName,
             contactEmail: application.email,
             phone: application.phone,
-            buyer: {
-              name: application.fullName,
-              email: application.email,
-              phone: application.phone,
-              nid: application.nid,
-              monthlyIncome: application.monthlyIncome,
-              employmentType: application.employmentType,
-            },
+              buyer: {
+                name: application.fullName,
+                email: application.email,
+                phone: application.phone,
+                monthlyIncome: application.monthlyIncome,
+                employmentType: application.employmentType,
+              },
             vehicle: {
               carPrice: application.carPrice,
               downPayment,
@@ -148,7 +185,7 @@ export default function ApplyForLoanPage() {
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Financing</p>
         <h1 className="mt-3 text-4xl font-bold text-white">Apply for Car Loan</h1>
         <p className="mt-3 text-sm leading-7 text-slate-300">
-          Complete the form to apply for an EMI-based car loan. Our team will review your application and get back to you within 24 hours.
+          Share your details here and we&apos;ll help place a loan application with a partner bank. Loan officers review the financial documents you provide and contact you after their assessment, while we continue to support buyers browsing vehicles from across Bangladesh.
         </p>
       </section>
 
@@ -255,17 +292,6 @@ export default function ApplyForLoanPage() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">National ID / Passport</label>
-                  <input
-                    type="text"
-                    name="nid"
-                    value={application.nid || ''}
-                    onChange={handleInputChange}
-                    placeholder="Enter your NID or Passport number"
-                    className="glass-field w-full rounded-lg px-4 py-3 text-sm"
-                  />
-                </div>
               </div>
             )}
 
@@ -286,18 +312,21 @@ export default function ApplyForLoanPage() {
                   <p className="mt-2 text-xs text-slate-600">Your monthly gross income</p>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">Employment Type</label>
-                  <select
-                    name="employmentType"
-                    value={application.employmentType || 'employed'}
-                    onChange={handleInputChange}
-                    className="glass-field w-full rounded-lg px-4 py-3 text-sm"
-                  >
-                    <option value="employed">Employed</option>
-                    <option value="self-employed">Self-Employed</option>
-                    <option value="business-owner">Business Owner</option>
-                  </select>
-                </div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Employment Type</label>
+                    <select
+                      name="employmentType"
+                      value={application.employmentType || ''}
+                      onChange={handleInputChange}
+                      className="glass-field w-full appearance-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-10 text-sm text-slate-900 shadow-sm focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20"
+                    >
+                      <option value="">Select profession</option>
+                      {PROFESSION_OPTIONS.filter((option) => option.value).map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 <div className="rounded-xl border border-slate-200/80 bg-white/70 p-4">
                   <p className="text-sm font-semibold text-slate-900">Recommended EMI Range</p>
                   <p className="mt-2 text-xs text-slate-600">
@@ -339,7 +368,7 @@ export default function ApplyForLoanPage() {
                           selectedSchemeId: newBank?.schemes?.[0]?.id,
                         }));
                       }}
-                      className="w-full rounded-lg border border-black/10 px-4 py-3 text-sm"
+                      className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-10 text-sm text-slate-900 shadow-sm focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20"
                     >
                       {banks.map((b) => (
                         <option key={b.id} value={b.id}>
@@ -359,7 +388,7 @@ export default function ApplyForLoanPage() {
                           selectedSchemeId: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-black/10 px-4 py-3 text-sm"
+                      className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-10 text-sm text-slate-900 shadow-sm focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20"
                     >
                       {selectedBank?.schemes?.map((s) => (
                         <option key={s.id} value={s.id}>

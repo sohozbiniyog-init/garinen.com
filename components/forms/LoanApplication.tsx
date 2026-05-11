@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { showToast } from '@/components/common/Toast';
+import { PROFESSION_OPTIONS, type ProfessionType } from '@/lib/professions';
 
 type LoanStatus = 'DRAFT' | 'FOLLOW_UP_REQUIRED' | 'SUBMITTED';
 
@@ -16,6 +17,13 @@ export interface LoanPrefill {
   location?: string;
 }
 
+type BuyerProfile = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  profession?: ProfessionType | null;
+} | null;
+
 const bankOptions = [
   { id: 'brac', name: 'BRAC Bank', maxFinancing: 0.7, maxTenure: 72 },
   { id: 'city', name: 'City Bank', maxFinancing: 0.6, maxTenure: 72 }
@@ -28,8 +36,9 @@ export function LoanApplicationForm({ prefill }: { prefill?: LoanPrefill }) {
   const [downPayment, setDownPayment] = useState(Math.round((prefill?.price ?? 2500000) * 0.1));
   const [tenure, setTenure] = useState(48);
   const [monthlyIncome, setMonthlyIncome] = useState(120000);
-  const [occupation, setOccupation] = useState('Salaried');
+  const [profession, setProfession] = useState<ProfessionType | ''>('');
   const [applicantName, setApplicantName] = useState('');
+  const [applicantEmail, setApplicantEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<LoanStatus>('DRAFT');
 
@@ -45,12 +54,52 @@ export function LoanApplicationForm({ prefill }: { prefill?: LoanPrefill }) {
   // Allow saving a draft without phone; defer document collection until follow-up/submission
   const canSubmitDraft = applicantName.trim().length > 1 && loanAmount > 0;
 
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      try {
+        const res = await fetch('/api/auth/profile', { cache: 'no-store' });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as { profile?: BuyerProfile };
+        const profile = data.profile;
+        if (!active || !profile) return;
+
+        if (!applicantName.trim() && profile.name) {
+          setApplicantName(profile.name);
+        }
+
+        if (!applicantEmail.trim() && profile.email) {
+          setApplicantEmail(profile.email);
+        }
+
+        if (!phone.trim() && profile.phone) {
+          setPhone(profile.phone);
+        }
+
+        if (!profession && profile.profession) {
+          setProfession(profile.profession);
+        }
+      } catch {
+        return;
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [applicantEmail, applicantName, phone, profession]);
+
   const applicationJson = useMemo(() => ({
     applicationStatus: status,
     buyer: {
       name: applicantName,
+      email: applicantEmail,
       phone,
-      occupation,
+      occupation: profession,
       monthlyIncome
     },
     vehicle: {
@@ -80,7 +129,7 @@ export function LoanApplicationForm({ prefill }: { prefill?: LoanPrefill }) {
       followUpRequired: true,
       adminReviewNeeded: true
     }
-  }), [affordability.estimatedEmi, affordability.ratio, applicantName, bankId, budget, downPayment, loanAmount, monthlyIncome, occupation, phone, prefill, scheme, selectedBank.maxFinancing, selectedBank.name, status, tenure, maxLoanAmount]);
+  }), [affordability.estimatedEmi, affordability.ratio, applicantEmail, applicantName, bankId, budget, downPayment, loanAmount, monthlyIncome, phone, prefill, profession, scheme, selectedBank.maxFinancing, selectedBank.name, status, tenure, maxLoanAmount]);
   const signInRedirect = `/dashboard/buyer/loan-apply${prefill?.listingId ? `?listingId=${encodeURIComponent(prefill.listingId)}` : ''}`;
 
   async function saveDraft() {
@@ -155,12 +204,22 @@ export function LoanApplicationForm({ prefill }: { prefill?: LoanPrefill }) {
             <input value={applicantName} onChange={(e) => setApplicantName(e.target.value)} className="glass-field w-full rounded-xl px-4 py-3" placeholder="Full name" />
           </label>
           <label className="space-y-2 text-sm">
+            <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Email</span>
+            <input value={applicantEmail} onChange={(e) => setApplicantEmail(e.target.value)} className="glass-field w-full rounded-xl px-4 py-3" placeholder="your@email.com" />
+          </label>
+          <label className="space-y-2 text-sm">
             <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Phone</span>
             <input value={phone} onChange={(e) => setPhone(e.target.value)} className="glass-field w-full rounded-xl px-4 py-3" placeholder="01XXXXXXXXX" />
           </label>
           <label className="space-y-2 text-sm">
-            <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Occupation</span>
-            <input value={occupation} onChange={(e) => setOccupation(e.target.value)} className="glass-field w-full rounded-xl px-4 py-3" placeholder="Salaried / Business / Self-employed" />
+            <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Employment Type</span>
+            <select value={profession} onChange={(e) => setProfession(e.target.value as ProfessionType | '')} className="glass-field w-full rounded-xl px-4 py-3">
+              {PROFESSION_OPTIONS.map((option) => (
+                <option key={option.value || 'empty'} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="space-y-2 text-sm">
             <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Monthly Income</span>

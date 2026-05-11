@@ -26,12 +26,21 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
   const [message, setMessage] = useState(initialNotice);
   const [wantToSignupAsVendor, setWantToSignupAsVendor] = useState(false);
   const [showVendorTOS, setShowVendorTOS] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState<string>('/dashboard');
 
   useEffect(() => {
     if (initialNotice) {
       setMessage(initialNotice);
     }
   }, [initialNotice]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get('redirect');
+    if (target && target.startsWith('/')) {
+      setRedirectTarget(target);
+    }
+  }, []);
 
   const getErrorMessage = (err: unknown, fallback: string) => {
     if (err instanceof Error) {
@@ -72,7 +81,7 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
 
       // For signin: redirect to dashboard
       showToast('Signed in successfully', { type: 'success' });
-      router.push(data.redirectTo || '/dashboard');
+      router.push(redirectTarget || data.redirectTo || '/dashboard');
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Failed to authenticate'));
     } finally {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface CustomOrderFormData {
   brand: string;
@@ -14,11 +14,15 @@ export interface CustomOrderFormData {
 }
 
 interface CustomOrderFormProps {
-  onSubmit: (data: CustomOrderFormData) => void;
+  onSubmit: (data: CustomOrderFormData) => Promise<boolean | void> | boolean | void;
   isLoading?: boolean;
 }
 
+const DRAFT_KEY = 'custom-order-draft';
+
 export function CustomOrderForm({ onSubmit, isLoading = false }: CustomOrderFormProps) {
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: currentYear - 1970 + 1 }, (_, index) => currentYear - index);
   const [formData, setFormData] = useState<CustomOrderFormData>({
     brand: '',
     model: '',
@@ -31,8 +35,32 @@ export function CustomOrderForm({ onSubmit, isLoading = false }: CustomOrderForm
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const hasHydratedDraft = useRef(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    try {
+      const saved = window.sessionStorage.getItem(DRAFT_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as Partial<CustomOrderFormData>;
+      setFormData((prev) => ({ ...prev, ...parsed }));
+    } catch {
+      return;
+    } finally {
+      hasHydratedDraft.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedDraft.current) return;
+
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+    } catch {
+      return;
+    }
+  }, [formData]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -72,17 +100,25 @@ export function CustomOrderForm({ onSubmit, isLoading = false }: CustomOrderForm
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
-      // Reset form on success
-      setFormData({
-        brand: '',
-        model: '',
-        yearFrom: '',
-        yearTo: '',
-        budget: '',
-        color: '',
-        features: '',
-        notes: '',
+      void Promise.resolve(onSubmit(formData)).then((didSubmit) => {
+        if (!didSubmit) return;
+
+        setFormData({
+          brand: '',
+          model: '',
+          yearFrom: '',
+          yearTo: '',
+          budget: '',
+          color: '',
+          features: '',
+          notes: '',
+        });
+
+        try {
+          window.sessionStorage.removeItem(DRAFT_KEY);
+        } catch {
+          return;
+        }
       });
     }
   };
@@ -129,17 +165,20 @@ export function CustomOrderForm({ onSubmit, isLoading = false }: CustomOrderForm
           <label htmlFor="yearFrom" className="block text-sm font-semibold text-ink">
             Preferred Year From
           </label>
-          <input
-            type="number"
+          <select
             id="yearFrom"
             name="yearFrom"
             value={formData.yearFrom}
             onChange={handleChange}
-            placeholder="2020"
-            min="1990"
-            max={new Date().getFullYear()}
-            className="w-full rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink placeholder-smoke transition focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20"
-          />
+            className="w-full appearance-none rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink transition focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20"
+          >
+            <option value="">Select year</option>
+            {yearOptions.map((year) => (
+              <option key={year} value={String(year)}>
+                {year}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Year To */}
@@ -147,17 +186,20 @@ export function CustomOrderForm({ onSubmit, isLoading = false }: CustomOrderForm
           <label htmlFor="yearTo" className="block text-sm font-semibold text-ink">
             Preferred Year To
           </label>
-          <input
-            type="number"
+          <select
             id="yearTo"
             name="yearTo"
             value={formData.yearTo}
             onChange={handleChange}
-            placeholder="2025"
-            min="1990"
-            max={new Date().getFullYear()}
-            className="w-full rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink placeholder-smoke transition focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20"
-          />
+            className="w-full appearance-none rounded-lg border border-black/10 bg-white/50 px-4 py-3 text-ink transition focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20"
+          >
+            <option value="">Select year</option>
+            {yearOptions.map((year) => (
+              <option key={year} value={String(year)}>
+                {year}
+              </option>
+            ))}
+          </select>
           {errors.yearFrom && <p className="text-sm text-clay">{errors.yearFrom}</p>}
         </div>
 

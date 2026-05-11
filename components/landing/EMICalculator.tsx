@@ -48,14 +48,14 @@ export default function EmiCalculator({ carPrice: initialPrice = 3000000 }: Prop
         <div>
           <p className="text-[10px] uppercase tracking-[0.2em] text-smoke">Financing Tool</p>
           <h2 className="mt-1 text-2xl font-bold text-ink lg:text-[1.7rem]">
-            EMI <em className="not-italic text-clay">Calculator</em>
+            EMI <span className="text-clay">Calculator</span>
           </h2>
         </div>
 
         {/* Bank Selection */}
         <div>
           <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.2em] text-smoke">
-            Bank Scheme
+            Bank and Scheme
           </label>
           <div className="flex flex-wrap gap-2">
             {banks.map((bank) => (
@@ -165,19 +165,23 @@ export default function EmiCalculator({ carPrice: initialPrice = 3000000 }: Prop
       </div>
 
       {/* Result - Right Side */}
-      <div className="space-y-4 rounded-[1.25rem] border border-black/5 bg-sand/20 p-4">
+      <div className="space-y-4 rounded-[1.25rem] border border-black/5 bg-sand/20 p-4 shadow-soft">
         <div>
           <p className="text-[10px] uppercase tracking-[0.2em] text-smoke">Estimated Monthly EMI</p>
-          <div className="mt-2 text-2xl font-bold text-moss lg:text-[2rem]">
-            {formatBDT(Math.round(emi))}
-            <span className="text-xs font-semibold lg:text-sm"> / month</span>
+          <div className="mt-2 flex flex-col gap-1">
+            <div className="text-3xl font-bold leading-none text-ink lg:text-[2.25rem]">
+              {formatBDT(Math.round(emi))}
+            </div>
+            <div className="text-sm font-semibold leading-none text-smoke">
+              per month
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2 rounded-lg bg-white p-3 text-[11px] lg:gap-3 lg:p-3">
           <div className="space-y-1 text-center lg:space-y-2">
             <div className="font-semibold text-ink">{formatBDT(loanAmount)}</div>
-            <div className="text-xs text-smoke">Loan</div>
+            <div className="text-xs text-smoke">Loan amount</div>
           </div>
           <div className="border-l border-r border-black/10">
             <div className="space-y-1 px-2 text-center lg:space-y-2">
@@ -187,7 +191,7 @@ export default function EmiCalculator({ carPrice: initialPrice = 3000000 }: Prop
           </div>
           <div className="space-y-1 text-center lg:space-y-2">
             <div className="font-semibold text-moss">{formatBDT(Math.round(totalPayable))}</div>
-            <div className="text-xs text-smoke">Total</div>
+            <div className="text-xs text-smoke">Total payable</div>
           </div>
         </div>
 
@@ -196,7 +200,7 @@ export default function EmiCalculator({ carPrice: initialPrice = 3000000 }: Prop
         </Link>
 
         <p className="text-center text-[11px] leading-5 text-smoke">
-          Estimates based on current rates. Contact bank for approval.
+          Estimates use the selected bank rate. Final approval depends on the lender.
         </p>
       </div>
     </div>

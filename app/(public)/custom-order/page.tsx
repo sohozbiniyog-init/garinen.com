@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { CustomOrderForm, CustomOrderFormData } from '@/components/forms/CustomOrder';
 import { useEffect, useState } from 'react';
 
@@ -19,7 +20,18 @@ interface CustomOrder {
   updatedAt: string;
 }
 
+type AuthProfile = {
+  profile?: {
+    id: string;
+  } | null;
+  user?: unknown;
+  claims?: unknown;
+};
+
+const DRAFT_KEY = 'custom-order-draft';
+
 export default function CustomOrderPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [submitError, setSubmitError] = useState('');
@@ -31,20 +43,27 @@ export default function CustomOrderPage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // Get current user from localStorage (mock auth)
-        // In production, this would come from session/auth library
-        const userId = localStorage.getItem('currentUserId');
+        const response = await fetch('/api/auth/me', { cache: 'no-store' });
+        if (!response.ok) {
+          setCurrentUserId(null);
+          router.replace('/login?redirect=/custom-order');
+          return;
+        }
+
+        const data = (await response.json()) as AuthProfile;
+        const userId = data.profile?.id ?? null;
         if (userId) {
           setCurrentUserId(userId);
           await loadPreviousOrders(userId);
         }
       } catch (error) {
         console.error('Error loading user data:', error);
+        router.replace('/login?redirect=/custom-order');
       }
     };
 
     loadUserData();
-  }, []);
+  }, [router]);
 
   const loadPreviousOrders = async (userId: string) => {
     try {
@@ -62,8 +81,15 @@ export default function CustomOrderPage() {
   };
 
   const handleFormSubmit = async (data: CustomOrderFormData) => {
-    // Use mock user ID if not logged in (in production, get from auth session)
-    const userId = currentUserId || `guest-${Date.now()}`;
+    if (!currentUserId) {
+      try {
+        window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      } catch {
+        // ignore persistence failures and still redirect
+      }
+      router.replace('/login?redirect=/custom-order');
+      return false;
+    }
 
     setIsLoading(true);
     setSubmitMessage('');
@@ -76,7 +102,7 @@ export default function CustomOrderPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
+          userId: currentUserId,
           ...data,
         }),
       });
@@ -91,15 +117,11 @@ export default function CustomOrderPage() {
 
       // Update previous orders list
       setPreviousOrders((prev) => [newOrder, ...prev]);
-
-      // Save user ID for persistence
-      if (!currentUserId) {
-        setCurrentUserId(userId);
-        localStorage.setItem('currentUserId', userId);
-      }
+      return true;
     } catch (error) {
       console.error('Error submitting custom order:', error);
       setSubmitError('Failed to submit custom order. Please try again.');
+      return false;
     } finally {
       setIsLoading(false);
     }

@@ -1,24 +1,42 @@
 import { prisma } from '@/lib/db/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseRouteClient, jsonWithCookies, type PendingCookie } from '@/lib/auth/route-helpers';
 
 export async function POST(request: NextRequest) {
   try {
+    const pendingCookies: PendingCookie[] = [];
+    const supabase = createSupabaseRouteClient(request, pendingCookies);
+    const { data: authData } = await supabase.auth.getUser();
+
+    if (!authData.user?.email) {
+      return jsonWithCookies({ error: 'Unauthorized' }, 401, pendingCookies);
+    }
+
     const body = await request.json();
 
-    const { userId, brand, model, yearFrom, yearTo, budget, color, features, notes } = body;
+    const { brand, model, yearFrom, yearTo, budget, color, features, notes } = body;
 
     // Validate required fields
-    if (!userId || !brand || !model) {
+    if (!brand || !model) {
       return NextResponse.json(
-        { error: 'Missing required fields: userId, brand, model' },
+        { error: 'Missing required fields: brand, model' },
         { status: 400 }
       );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: authData.user.email },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return jsonWithCookies({ error: 'Profile not found' }, 404, pendingCookies);
     }
 
     // Create custom order
     const customOrder = await prisma.customOrder.create({
       data: {
-        userId,
+        userId: user.id,
         brand,
         model,
         yearFrom: yearFrom ? parseInt(yearFrom) : null,
@@ -30,7 +48,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(customOrder, { status: 201 });
+    return jsonWithCookies(customOrder as Record<string, unknown>, 201, pendingCookies);
   } catch (error) {
     console.error('Error creating custom order:', error);
     return NextResponse.json(

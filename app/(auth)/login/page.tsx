@@ -8,6 +8,15 @@ import { createBrowserClient } from '@supabase/ssr';
 function LoginContent() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
+  const redirectPath = '/dashboard/buyer';
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get('redirect');
+    if (target && target.startsWith('/')) {
+      (window as Window & { __loginRedirectPath?: string }).__loginRedirectPath = target;
+    }
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -27,7 +36,7 @@ function LoginContent() {
           const res = await fetch('/api/auth/me');
           const json = await res.json();
           const role = json?.claims?.role || 'BUYER';
-          const adminTier = json?.claims?.admin_tier;
+          const target = (window as Window & { __loginRedirectPath?: string }).__loginRedirectPath || redirectPath;
 
           if (role === 'ADMIN') {
             router.replace('/admin');
@@ -38,11 +47,12 @@ function LoginContent() {
               router.replace('/dashboard/seller');
             }
           } else {
-            router.replace('/dashboard/buyer');
+            router.replace(target as Parameters<typeof router.replace>[0]);
           }
-        } catch (err) {
+        } catch {
           // If error fetching auth info, redirect to buyer dashboard
-          router.replace('/dashboard/buyer');
+          const target = (window as Window & { __loginRedirectPath?: string }).__loginRedirectPath || redirectPath;
+          router.replace(target as Parameters<typeof router.replace>[0]);
         }
       }
     };

@@ -17,9 +17,8 @@ export function SiteHeader() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   );
 
-  const accountHref = auth === 'admin' ? '/admin' : auth === 'vendor' ? '/dashboard/seller' : '/dashboard/account';
-  const accountLabel = auth === 'admin' ? 'Admin Panel' : auth === 'vendor' ? 'Dashboard' : 'My Profile';
-  const accountKindLabel = auth === 'admin' ? 'Administrator' : auth === 'vendor' ? 'Vendor account' : 'Buyer account';
+  const accountHref = auth === 'admin' ? '/admin' : auth === 'vendor' ? '/dashboard/seller' : '/dashboard/buyer';
+  const accountLabel = 'My Profile';
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -188,20 +187,8 @@ export function SiteHeader() {
               </button>
               {menuOpen ? (
                 <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-56 rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl backdrop-blur-xl">
-                  <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">Active account</p>
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-white">My Profile</span>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
-                        {accountKindLabel}
-                      </span>
-                    </div>
-                  </div>
                   <Link href={accountHref} className="block rounded-xl px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10">
                     {accountLabel}
-                  </Link>
-                  <Link href="/dashboard/account" className="block rounded-xl px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10">
-                    Account settings
                   </Link>
                   <button
                     type="button"
@@ -229,20 +216,8 @@ export function SiteHeader() {
               </button>
               {menuOpen ? (
                 <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-56 rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl backdrop-blur-xl">
-                  <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">Active account</p>
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-white">{accountLabel}</span>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
-                        {accountKindLabel}
-                      </span>
-                    </div>
-                  </div>
                   <Link href={accountHref} className="block rounded-xl px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10">
                     {accountLabel}
-                  </Link>
-                  <Link href="/dashboard/account" className="block rounded-xl px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10">
-                    Account settings
                   </Link>
                   <button
                     type="button"

@@ -79,6 +79,7 @@ enum VendorApprovalStatus {
 enum ProfessionType {
   DOCTOR
   ENGINEER
+  EMPLOYEE
   BUSINESSMAN
   EMPLOYEE_GOVT
   EMPLOYEE_PVT
