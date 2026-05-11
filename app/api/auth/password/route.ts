@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifyAdminCredentials } from '@/lib/auth/admin-db';
 import { syncUserProfile } from '@/lib/auth/profile';
+import { normalizeBangladeshPhone } from '@/lib/auth/phone';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
 
 type AuthMode = 'signin' | 'signup';
@@ -31,6 +32,11 @@ export async function POST(request: NextRequest) {
     // Validate password is provided for signup
     if (mode === 'signup' && !password) {
       return jsonWithCookies({ error: 'Password is required for sign up' }, 400, pendingCookies);
+    }
+
+    const normalizedPhone = phone ? normalizeBangladeshPhone(phone) : null;
+    if (phone && !normalizedPhone) {
+      return jsonWithCookies({ error: 'Invalid numbers' }, 400, pendingCookies);
     }
 
     const supabase = createSupabaseRouteClient(request, pendingCookies);
@@ -71,6 +77,9 @@ export async function POST(request: NextRequest) {
             email: authEmail,
             password: password,
             options: {
+              emailRedirectTo: `${request.nextUrl.origin}/auth/callback?redirectTo=${encodeURIComponent(
+                isVendor ? '/vendor/onboarding' : '/dashboard/buyer'
+              )}`,
               data: {
                 full_name: name,
                 phone: phone || undefined,
@@ -102,9 +111,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // For signin, preserve existing role; for signup, infer from context
     const inferredRole = adminBootstrap
       ? 'ADMIN'
-      : 'BUYER'; // All new users start as BUYER, vendor approval is separate
+      : mode === 'signin' && currentProfile?.role
+        ? currentProfile.role // Preserve existing role on login
+        : 'BUYER'; // New signups default to BUYER
     
     // Determine vendor approval status
     const vendorApprovalStatus = adminBootstrap
@@ -113,10 +125,12 @@ export async function POST(request: NextRequest) {
         ? 'PENDING' // Vendor signups stay PENDING until admin approves
         : currentProfile?.vendorApprovalStatus ?? undefined;
 
+    const profilePhone = adminBootstrap?.phone || normalizedPhone || (authUser.user_metadata?.phone as string | undefined);
+
     const existingProfile = await syncUserProfile({
       email: authUser.email ?? authEmail,
       name: adminBootstrap?.name || name || authUser.user_metadata?.full_name || authUser.email || authEmail,
-      phone: adminBootstrap?.phone || phone || (authUser.user_metadata?.phone as string | undefined),
+      phone: profilePhone,
       role: inferredRole,
       adminTier: adminBootstrap?.tier ?? currentProfile?.adminTier ?? undefined,
       vendorApprovalStatus

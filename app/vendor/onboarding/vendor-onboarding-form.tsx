@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { normalizeBangladeshPhone } from '@/lib/auth/phone';
 
 export default function VendorOnboardingForm() {
   const router = useRouter();
@@ -40,6 +41,12 @@ export default function VendorOnboardingForm() {
       return;
     }
 
+    const normalizedPhone = normalizeBangladeshPhone(phone);
+    if (!normalizedPhone) {
+      setError('Invalid numbers');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -51,7 +58,7 @@ export default function VendorOnboardingForm() {
           shopName,
           description,
           location,
-          phone,
+          phone: normalizedPhone,
           category,
         }),
       });
@@ -62,8 +69,8 @@ export default function VendorOnboardingForm() {
       }
 
       router.push(`/vendor/submitted?identifier=${encodeURIComponent(identifier)}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit vendor information');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to submit vendor information');
     } finally {
       setLoading(false);
     }

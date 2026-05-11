@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   const existing = await prisma.user.findUnique({ where: { email: data.user.email } });
-  await syncUserProfile({
+  const syncedProfile = await syncUserProfile({
     email: data.user.email,
     name: existing?.name || data.user.user_metadata?.full_name || data.user.email,
     phone: (data.user.user_metadata?.phone as string | undefined) || existing?.phone || undefined,
@@ -40,7 +40,15 @@ export async function GET(req: NextRequest) {
     vendorApprovalStatus: existing?.vendorApprovalStatus ?? undefined,
   });
 
+  // Determine redirect based on role
+  let defaultRedirectTo = '/dashboard/buyer';
+  if (syncedProfile.role === 'ADMIN') {
+    defaultRedirectTo = '/admin';
+  } else if (syncedProfile.role === 'VENDOR') {
+    defaultRedirectTo = syncedProfile.vendorApprovalStatus === 'PENDING' ? '/vendor/onboarding' : '/dashboard/seller';
+  }
+
   const redirectToParam = req.nextUrl.searchParams.get('redirectTo');
-  const redirectTo = redirectToParam && redirectToParam.startsWith('/') ? redirectToParam : '/dashboard';
+  const redirectTo = redirectToParam && redirectToParam.startsWith('/') ? redirectToParam : defaultRedirectTo;
   return redirectWithCookies(`${req.nextUrl.origin}${redirectTo}`, pendingCookies);
 }

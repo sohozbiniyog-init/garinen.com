@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtDecode } from 'jwt-decode';
+import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 import { prisma } from '@/lib/db/prisma';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
 
@@ -14,8 +14,13 @@ export async function GET(request: NextRequest) {
       return jsonWithCookies({ error: 'Unauthorized' }, 401, pendingCookies);
     }
 
-    const decoded = jwtDecode<any>(session.access_token);
-    const adminTier = decoded.app_metadata?.custom_claims?.admin_tier;
+    let adminTier: string | null = null;
+    try {
+      const payload = await verifySupabaseAccessToken(session.access_token);
+      adminTier = payload?.app_metadata?.custom_claims?.admin_tier || null;
+    } catch (err) {
+      return jsonWithCookies({ error: 'Unauthorized' }, 401, pendingCookies);
+    }
 
     // Only SUPER_ADMIN and VENDOR_ADMIN can list admins
     if (adminTier !== 'SUPER_ADMIN' && adminTier !== 'VENDOR_ADMIN') {

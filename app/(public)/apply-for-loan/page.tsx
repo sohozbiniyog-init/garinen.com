@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useBankRates } from '@/lib/contexts/bank-rates';
 
@@ -200,17 +201,17 @@ export default function ApplyForLoanPage() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Application Submitted!</h2>
           <p className="mt-3 text-sm text-slate-600">
-            Your loan application has been submitted successfully. We'll review your application and contact you within 24 hours.
+            Your loan application has been submitted successfully. We&apos;ll review your application and contact you within 24 hours.
           </p>
           <p className="mt-3 text-sm font-semibold text-moss">
             Reference ID: {referenceId || 'PENDING'}
           </p>
-          <a
+          <Link
             href="/"
             className="mt-6 inline-block rounded-full bg-moss px-6 py-3 text-sm font-semibold text-white transition hover:bg-opacity-90"
           >
             Back to Home
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="glass-card rounded-[2rem] shadow-soft">

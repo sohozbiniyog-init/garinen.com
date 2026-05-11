@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
-import { jwtDecode } from 'jwt-decode';
 
 export function SiteHeader() {
   const [auth, setAuth] = useState<'guest' | 'buyer' | 'vendor' | 'admin'>('guest');
@@ -18,7 +17,7 @@ export function SiteHeader() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   );
 
-  const accountHref = auth === 'admin' ? '/admin' : auth === 'vendor' ? '/dashboard/seller' : '/dashboard';
+  const accountHref = auth === 'admin' ? '/admin' : auth === 'vendor' ? '/dashboard/seller' : '/dashboard/account';
   const accountLabel = auth === 'admin' ? 'Admin Panel' : auth === 'vendor' ? 'Dashboard' : 'My Profile';
   const accountKindLabel = auth === 'admin' ? 'Administrator' : auth === 'vendor' ? 'Vendor account' : 'Buyer account';
 
@@ -36,31 +35,29 @@ export function SiteHeader() {
           return;
         }
 
-        // Get session to access JWT with custom claims
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session?.access_token) {
-          setAuth('guest');
-          setIsLoading(false);
-          return;
-        }
-
-        // Decode JWT to extract custom claims (set during auth)
+        // Ask the server for verified claims (server fetches from database)
         try {
-          const decoded = jwtDecode<any>(session.access_token);
-          const userRole = decoded.app_metadata?.custom_claims?.role || 'BUYER';
+          const res = await fetch('/api/auth/me');
+          if (!res.ok) {
+            setAuth('guest');
+            setIsLoading(false);
+            return;
+          }
 
-          if (userRole === 'ADMIN') {
+          const json = await res.json();
+          const role = json?.claims?.role || 'BUYER';
+          const adminTier = json?.claims?.admin_tier;
+
+          // Determine auth type based on role and admin tier
+          if (role === 'ADMIN' && adminTier) {
             setAuth('admin');
-          } else if (userRole === 'VENDOR') {
+          } else if (role === 'VENDOR') {
             setAuth('vendor');
           } else {
             setAuth('buyer');
           }
         } catch (err) {
-          console.warn('Failed to decode JWT claims:', err);
+          console.warn('Failed to retrieve auth info:', err);
           setAuth('guest');
         }
       } catch (error) {

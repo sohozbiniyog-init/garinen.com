@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtDecode } from 'jwt-decode';
+import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
@@ -19,9 +19,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Check admin tier
-    const decoded = jwtDecode<any>(session.access_token);
-    const adminTier = decoded.app_metadata?.custom_claims?.admin_tier;
+    // Check admin tier (verify token signature)
+    let adminTier: string | null = null;
+    try {
+      const payload = await verifySupabaseAccessToken(session.access_token);
+      adminTier = payload?.app_metadata?.custom_claims?.admin_tier || null;
+    } catch (err) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
     if (!adminTier || (adminTier !== 'SUPER_ADMIN' && adminTier !== 'VENDOR_ADMIN' && adminTier !== 'BASIC_ADMIN')) {
       return NextResponse.json(

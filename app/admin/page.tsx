@@ -1,10 +1,18 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
+import type { Route } from 'next';
+import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
+
+type AdminCard = {
+  title: string;
+  description: string;
+  href: string;
+  allowed: boolean;
+};
 
 export default async function AdminPage() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
@@ -39,16 +47,23 @@ export default async function AdminPage() {
     redirect('/login');
   }
 
-  const decoded = jwtDecode<any>(token);
-  const claims = decoded.app_metadata?.custom_claims;
-  const userRole = claims?.role as string | undefined;
-  const adminTier = claims?.admin_tier as string | undefined;
+  let adminTier: string | null = null;
 
-  if (userRole !== 'ADMIN') {
-    redirect(userRole === 'VENDOR' ? '/dashboard/seller' : '/dashboard/buyer');
+  try {
+    const payload = await verifySupabaseAccessToken(token);
+    const claims = payload?.app_metadata?.custom_claims;
+    const userRole = claims?.role as string | undefined;
+    adminTier = claims?.admin_tier as string | undefined || null;
+
+    if (userRole !== 'ADMIN') {
+      redirect(userRole === 'VENDOR' ? '/dashboard/seller' : '/dashboard/buyer');
+    }
+  } catch (err) {
+    console.warn('Token verification failed on admin page:', err);
+    redirect('/login');
   }
 
-  const allowedCards = [
+  const allowedCards: AdminCard[] = [
     {
       title: 'Vendor Approvals',
       description: 'Review pending vendor applications and approve or reject them.',
@@ -109,7 +124,7 @@ export default async function AdminPage() {
         {allowedCards.map((card) => (
           <Link
             key={card.href}
-            href={card.href as any}
+            href={card.href as Route}
             className="group rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-white/20 hover:bg-white/[0.06]"
           >
             <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Workspace</p>

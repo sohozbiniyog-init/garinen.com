@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtDecode } from 'jwt-decode';
+import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
@@ -15,9 +15,14 @@ export async function POST(request: NextRequest) {
       return jsonWithCookies({ error: 'Unauthorized' }, 401, pendingCookies);
     }
 
-    // Verify admin access
-    const decoded = jwtDecode<any>(session.access_token);
-    const adminTier = decoded.app_metadata?.custom_claims?.admin_tier;
+    // Verify admin access (signature-checked)
+    let adminTier: string | null = null;
+    try {
+      const payload = await verifySupabaseAccessToken(session.access_token);
+      adminTier = payload?.app_metadata?.custom_claims?.admin_tier || null;
+    } catch (err) {
+      return jsonWithCookies({ error: 'Unauthorized' }, 401, pendingCookies);
+    }
 
     if (!adminTier || (adminTier !== 'SUPER_ADMIN' && adminTier !== 'VENDOR_ADMIN' && adminTier !== 'BASIC_ADMIN')) {
       return jsonWithCookies({ error: 'Forbidden: Only admins can approve vendors' }, 403, pendingCookies);
@@ -53,14 +58,17 @@ export async function POST(request: NextRequest) {
       return jsonWithCookies({ error: 'User not found' }, 404, pendingCookies);
     }
 
-    if (user.role !== 'VENDOR') {
-      return jsonWithCookies({ error: 'User is not a vendor' }, 400, pendingCookies);
+    if (user.vendorApprovalStatus !== 'PENDING') {
+      return jsonWithCookies({ error: 'User is not awaiting vendor approval' }, 400, pendingCookies);
     }
 
-    // Update vendor approval status
+    // Update vendor approval status and role
+    // When APPROVED: set role to VENDOR and vendorApprovalStatus to APPROVED
+    // When DECLINED: keep role as BUYER and set vendorApprovalStatus to DECLINED
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
+        role: status === 'APPROVED' ? 'VENDOR' : 'BUYER',
         vendorApprovalStatus: status,
       },
       select: {
@@ -72,22 +80,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Update Supabase user metadata if approved
-    if (status === 'APPROVED' && supabaseAdmin) {
-      try {
-        await supabaseAdmin.auth.admin.updateUserById(userId, {
-          app_metadata: {
-            custom_claims: {
-              role: 'VENDOR',
-              vendor_approval_status: 'APPROVED',
-            },
-          },
-        });
-      } catch (err) {
-        console.error('Failed to update Supabase metadata:', err);
-        // Continue anyway - database is the source of truth
-      }
-    }
+    // Vendor approval status is stored in Prisma (source of truth)
+    // Supabase metadata is optional - database is the authoritative store
 
     return jsonWithCookies(
       {

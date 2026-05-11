@@ -24,7 +24,7 @@ interface BookingWithRelations {
     title: string;
     price: string;
   };
-  emiDetails: Record<string, any>;
+  emiDetails: Record<string, unknown>;
 }
 
 interface LoanApplication {

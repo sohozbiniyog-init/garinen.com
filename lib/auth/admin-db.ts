@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/db/prisma';
-import { verifyHardcodedAdmin } from '@/lib/auth/hardcoded-admins';
 import bcryptjs from 'bcryptjs';
+import { prisma } from '@/lib/db/prisma';
 
 export interface AdminUser {
   id: string;
@@ -10,28 +9,19 @@ export interface AdminUser {
 }
 
 /**
- * Verify admin credentials against hardcoded admins (bootstrap) or AdminAccount table
- * Checks hardcoded admins first (for initial setup), then the AdminAccount table
+ * Verify admin credentials against AdminAccount table (source of truth).
+ * All admin credentials are stored in AdminAccount with bcrypt-hashed passwords.
  */
 export async function verifyAdminCredentials(
   email: string,
   password: string
 ): Promise<AdminUser | null> {
   try {
-    // 1. Check hardcoded admins first (for bootstrap/initial access)
-    const hardcodedAdmin = verifyHardcodedAdmin(email.toLowerCase(), password);
-    if (hardcodedAdmin) {
-      return {
-        id: `hardcoded-${email}`, // Synthetic ID for hardcoded admins
-        email: hardcodedAdmin.email,
-        name: hardcodedAdmin.name,
-        tier: hardcodedAdmin.tier,
-      };
-    }
+    const normalizedEmail = email.toLowerCase();
 
-    // 2. Check AdminAccount table (for dynamically created admins)
+    // Check AdminAccount table for the admin record
     const adminAccount = await prisma.adminAccount.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
       select: {
         id: true,
         email: true,
@@ -45,14 +35,12 @@ export async function verifyAdminCredentials(
       return null;
     }
 
-    // Compare password with bcrypt hash
     const passwordMatch = await bcryptjs.compare(password, adminAccount.passwordHash);
 
     if (!passwordMatch) {
       return null;
     }
 
-    // Return admin details
     return {
       id: adminAccount.id,
       email: adminAccount.email,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
+// server-verified claims are fetched from /api/auth/me
 import { createBrowserClient } from '@supabase/ssr';
 import { showToast } from '@/components/common/Toast';
 
@@ -11,7 +11,10 @@ interface VendorApplication {
   email: string;
   name: string;
   phone?: string;
-  vendorInfo?: Record<string, any>;
+  vendorInfo?: {
+    shopName?: string;
+    [key: string]: unknown;
+  };
   vendorApprovalStatus: string;
   createdAt: string;
 }
@@ -32,25 +35,28 @@ export default function VendorApprovalsPage() {
   useEffect(() => {
     const checkTierAndFetchVendors = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
+        try {
+          const res = await fetch('/api/auth/me');
+          if (!res.ok) {
+            router.push('/login');
+            return;
+          }
 
-        if (!token) {
+          const json = await res.json();
+          const tier = json?.claims?.admin_tier;
+
+          if (!tier || (tier !== 'SUPER_ADMIN' && tier !== 'VENDOR_ADMIN' && tier !== 'BASIC_ADMIN')) {
+            showToast('Only admins can access vendor approvals', { type: 'error' });
+            router.push('/login');
+            return;
+          }
+
+          setAdminTier(tier);
+          fetchVendors();
+        } catch (err) {
+          console.error('Failed to verify admin tier:', err);
           router.push('/login');
-          return;
         }
-
-        const decoded = jwtDecode<any>(token);
-        const tier = decoded.app_metadata?.custom_claims?.admin_tier;
-
-        if (!tier || (tier !== 'SUPER_ADMIN' && tier !== 'VENDOR_ADMIN' && tier !== 'BASIC_ADMIN')) {
-          showToast('Only admins can access vendor approvals', { type: 'error' });
-          router.push('/login');
-          return;
-        }
-
-        setAdminTier(tier);
-        fetchVendors();
       } catch (error) {
         console.error('Failed to verify admin tier:', error);
         router.push('/login');

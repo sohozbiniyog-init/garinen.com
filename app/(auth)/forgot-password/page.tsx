@@ -31,8 +31,9 @@ export default function ForgotPasswordPage() {
 
       setMessage(data?.message || 'If the email exists, a password reset link has been sent.');
       showToast('Password reset email sent if the account exists.', { type: 'success' });
-    } catch (err: any) {
-      setError(err.message || 'Failed to request password reset');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || 'Failed to request password reset');
     } finally {
       setLoading(false);
     }

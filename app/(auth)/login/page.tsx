@@ -1,13 +1,63 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthCard } from '@/components/auth/Card';
+import { createBrowserClient } from '@supabase/ssr';
 
 function LoginContent() {
+  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      );
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // User is already authenticated, redirect to dashboard
+        try {
+          const res = await fetch('/api/auth/me');
+          const json = await res.json();
+          const role = json?.claims?.role || 'BUYER';
+          const adminTier = json?.claims?.admin_tier;
+
+          if (role === 'ADMIN') {
+            router.replace('/admin');
+          } else if (role === 'VENDOR') {
+            if (json?.claims?.vendor_approval_status === 'PENDING') {
+              router.replace('/vendor/onboarding');
+            } else {
+              router.replace('/dashboard/seller');
+            }
+          } else {
+            router.replace('/dashboard/buyer');
+          }
+        } catch (err) {
+          // If error fetching auth info, redirect to buyer dashboard
+          router.replace('/dashboard/buyer');
+        }
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-md items-center px-6 py-12">
+    <main suppressHydrationWarning className="mx-auto flex min-h-[100dvh] max-w-md items-center px-6 py-12">
       <Suspense fallback={<div className="h-64 w-full rounded-[2rem] border border-black/10 bg-white/85 p-8 shadow-soft" />}>
-        <AuthCard initialNotice="" />
+        {isMounted ? (
+          <AuthCard initialNotice="" />
+        ) : (
+          <div className="h-64 w-full rounded-[2rem] border border-black/10 bg-white/85 p-8 shadow-soft" />
+        )}
       </Suspense>
     </main>
   );

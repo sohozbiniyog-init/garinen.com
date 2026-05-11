@@ -69,7 +69,7 @@ export default function ContactPage() {
             <a href="https://wa.me/8801616449801" target="_blank" rel="noreferrer" className="rounded-full border px-6 py-3 text-ink">Contact via WhatsApp</a>
           </div>
 
-          {status === 'sent' && <div role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-emerald-800">Thanks — your message was sent. We'll reply shortly.</div>}
+          {status === 'sent' && <div role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-emerald-800">Thanks — your message was sent. We&apos;ll reply shortly.</div>}
           {status === 'error' && <div role="alert" className="mt-4 rounded-lg bg-rose-50 p-3 text-rose-800">Unable to send message. Please try again or use the email link.</div>}
         </form>
 

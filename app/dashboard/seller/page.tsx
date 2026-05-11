@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Route } from 'next';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,15 +15,15 @@ export default function SellerDashboardPage() {
       </section>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-        {[
+        {([
           { href: '/dashboard/seller/listings', title: 'My Listings', description: 'Create and manage listings.' },
           { href: '/dashboard/seller/shop', title: 'Shop Profile', description: 'Update shop details and KYC.' },
           { href: '/dashboard/seller/bookings', title: 'Bookings', description: 'Track booking requests and deposits.' },
           { href: '/dashboard/seller/offers', title: 'Offers', description: 'Submit promotional offers for review.' },
-        ].map((item) => (
+        ] as const).map((item) => (
           <Link
             key={item.href}
-            href={item.href as any}
+            href={item.href as Route}
             className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 transition hover:border-white/20 hover:bg-white/10"
           >
             <p className="text-sm font-semibold text-white">{item.title}</p>

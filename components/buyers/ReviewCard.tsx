@@ -20,7 +20,7 @@ export function ReviewCard({
   return (
     <div className="glass-card rounded-[1.5rem] p-6 shadow-soft">
       <div className="mb-4">
-        <p className="text-sm italic leading-7 text-slate-700">"{content}"</p>
+        <p className="text-sm italic leading-7 text-slate-700">&quot;{content}&quot;</p>
       </div>
 
       <div className="mt-6 flex items-start gap-4 border-t border-white/20 pt-4">

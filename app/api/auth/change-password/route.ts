@@ -4,7 +4,7 @@ import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib
 import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import bcryptjs from 'bcryptjs';
-import { jwtDecode } from 'jwt-decode';
+import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 
 /**
  * Change password for authenticated users
@@ -62,14 +62,14 @@ export async function POST(request: NextRequest) {
 
     if (sessionData.data.session?.access_token) {
       try {
-        const decoded = jwtDecode<any>(sessionData.data.session.access_token);
-        adminTier = decoded.app_metadata?.custom_claims?.admin_tier || null;
+        const payload = await verifySupabaseAccessToken(sessionData.data.session.access_token);
+        adminTier = payload?.app_metadata?.custom_claims?.admin_tier || null;
       } catch (err) {
-        console.warn('Failed to decode JWT for password change:', err);
+        console.warn('Failed to verify JWT for password change:', err);
       }
     }
 
-    // If user is an admin, verify against AdminAccount table
+    // If user is an admin, verify and update against AdminAccount table.
     if (adminTier) {
       const adminAccount = await prisma.adminAccount.findUnique({
         where: { email: userEmail.toLowerCase() },
@@ -85,22 +85,18 @@ export async function POST(request: NextRequest) {
         return jsonWithCookies({ error: 'Admin account not found' }, 404, pendingCookies);
       }
 
-      // Verify current password
       const passwordMatch = await bcryptjs.compare(currentPassword, adminAccount.passwordHash);
       if (!passwordMatch) {
         return jsonWithCookies({ error: 'Current password is incorrect' }, 400, pendingCookies);
       }
 
-      // Hash new password
       const newPasswordHash = await bcryptjs.hash(newPassword, 12);
 
-      // Update AdminAccount in Prisma
       await prisma.adminAccount.update({
         where: { id: adminAccount.id },
         data: { passwordHash: newPasswordHash },
       });
 
-      // Update Supabase Auth password
       if (!supabaseAdmin) {
         return jsonWithCookies({ error: 'Supabase admin client is not configured' }, 500, pendingCookies);
       }
@@ -113,7 +109,6 @@ export async function POST(request: NextRequest) {
         return jsonWithCookies({ error: `Failed to update Supabase password: ${updateError.message}` }, 400, pendingCookies);
       }
 
-      // Sign out all sessions
       await supabase.auth.signOut().catch(() => null);
 
       return jsonWithCookies(

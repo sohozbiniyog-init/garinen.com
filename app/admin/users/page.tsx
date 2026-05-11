@@ -2,7 +2,7 @@
 
 import { AdminUserCard } from '@/components/admin/UserCard';
 import { createBrowserClient } from '@supabase/ssr';
-import { jwtDecode } from 'jwt-decode';
+// admin tier is resolved via server-verified endpoint
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -52,18 +52,14 @@ export default function AdminUsersPage() {
 
     const loadAdminTier = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        const token = session?.access_token;
-        if (!token) {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) {
           setAdminTier(null);
           return;
         }
 
-        const decoded = jwtDecode<any>(token);
-        const tier = decoded.app_metadata?.custom_claims?.admin_tier;
+        const json = await res.json();
+        const tier = json?.claims?.admin_tier;
 
         if (tier === 'SUPER_ADMIN' || tier === 'VENDOR_ADMIN' || tier === 'BASIC_ADMIN') {
           setAdminTier(tier);

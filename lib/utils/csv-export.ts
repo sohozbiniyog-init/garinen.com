@@ -1,5 +1,5 @@
 // CSV Export Utility
-export function exportToCSV(data: Record<string, any>[], filename: string): void {
+export function exportToCSV(data: Record<string, unknown>[], filename: string): void {
   if (!data || data.length === 0) {
     console.warn('No data to export');
     return;
@@ -41,48 +41,55 @@ export function exportToCSV(data: Record<string, any>[], filename: string): void
   document.body.removeChild(link);
 }
 
-export function prepareBookingsForCSV(bookings: any[]): Record<string, any>[] {
-  return bookings.map((booking) => ({
-    'Booking ID': booking.id,
-    'Buyer Name': booking.user?.name || 'N/A',
-    'Buyer Email': booking.user?.email || 'N/A',
-    'Buyer Phone': booking.user?.phone || 'N/A',
-    'Address': booking.address || 'N/A',
-    'Profession': booking.profession || 'N/A',
-    'Listing Title': booking.listing?.title || 'N/A',
-    'Car Price': `৳ ${booking.listing?.price || 'N/A'}`,
-    'Deposit Amount': `৳ ${booking.depositAmount || 'N/A'}`,
-    'Status': booking.status || 'PENDING',
-    'Payment Status': booking.paymentStatus || 'PENDING',
-    'Created Date': new Date(booking.createdAt).toLocaleDateString(),
-  }));
+export function prepareBookingsForCSV(bookings: unknown[]): Record<string, unknown>[] {
+  return bookings.map((booking) => {
+    const b = booking as Record<string, unknown>;
+    return {
+      'Booking ID': b['id'] ?? 'N/A',
+      'Buyer Name': (b['user'] as Record<string, unknown> | undefined)?.['name'] ?? 'N/A',
+      'Buyer Email': (b['user'] as Record<string, unknown> | undefined)?.['email'] ?? 'N/A',
+      'Buyer Phone': (b['user'] as Record<string, unknown> | undefined)?.['phone'] ?? 'N/A',
+      'Address': b['address'] ?? 'N/A',
+      'Profession': b['profession'] ?? 'N/A',
+      'Listing Title': (b['listing'] as Record<string, unknown> | undefined)?.['title'] ?? 'N/A',
+      'Car Price': `৳ ${(b['listing'] as Record<string, unknown> | undefined)?.['price'] ?? 'N/A'}`,
+      'Deposit Amount': `৳ ${b['depositAmount'] ?? 'N/A'}`,
+      'Status': b['status'] ?? 'PENDING',
+      'Payment Status': b['paymentStatus'] ?? 'PENDING',
+      'Created Date': new Date(String(b['createdAt'] ?? '')).toLocaleDateString(),
+    };
+  });
 }
 
-export function prepareTestDrivesForCSV(bookings: any[]): Record<string, any>[] {
+export function prepareTestDrivesForCSV(bookings: unknown[]): Record<string, unknown>[] {
   return bookings
-    .filter((b) => b.status === 'TEST_DRIVE')
+    .map((b) => b as Record<string, unknown>)
+    .filter((b) => b['status'] === 'TEST_DRIVE')
     .map((booking) => ({
-      'Booking ID': booking.id,
-      'Buyer Name': booking.user?.name || 'N/A',
-      'Buyer Email': booking.user?.email || 'N/A',
-      'Buyer Phone': booking.user?.phone || 'N/A',
-      'Listing Title': booking.listing?.title || 'N/A',
+      'Booking ID': booking['id'] ?? 'N/A',
+      'Buyer Name': (booking['user'] as Record<string, unknown> | undefined)?.['name'] ?? 'N/A',
+      'Buyer Email': (booking['user'] as Record<string, unknown> | undefined)?.['email'] ?? 'N/A',
+      'Buyer Phone': (booking['user'] as Record<string, unknown> | undefined)?.['phone'] ?? 'N/A',
+      'Listing Title': (booking['listing'] as Record<string, unknown> | undefined)?.['title'] ?? 'N/A',
       'Status': 'Test Drive',
-      'Scheduled Date': booking.emiDetails?.preferredDate || 'N/A',
-      'Scheduled Time': booking.emiDetails?.preferredTime || 'N/A',
-      'Created Date': new Date(booking.createdAt).toLocaleDateString(),
+      'Scheduled Date': (booking['emiDetails'] as Record<string, unknown> | undefined)?.['preferredDate'] ?? 'N/A',
+      'Scheduled Time': (booking['emiDetails'] as Record<string, unknown> | undefined)?.['preferredTime'] ?? 'N/A',
+      'Created Date': new Date(String(booking['createdAt'] ?? '')).toLocaleDateString(),
     }));
 }
 
-export function prepareLoansForCSV(loans: any[]): Record<string, any>[] {
-  return loans.map((loan) => ({
-    'Loan ID': loan.id,
-    'Applicant Name': loan.name || 'N/A',
-    'Applicant Email': loan.email || 'N/A',
-    'Applicant Phone': loan.phone || 'N/A',
-    'Loan Amount': loan.amount ? `৳ ${loan.amount}` : 'N/A',
-    'Status': loan.status || 'DRAFT',
-    'Submitted Date': loan.submittedAt ? new Date(loan.submittedAt).toLocaleDateString() : 'Not Submitted',
-    'Created Date': new Date(loan.createdAt).toLocaleDateString(),
-  }));
+export function prepareLoansForCSV(loans: unknown[]): Record<string, unknown>[] {
+  return loans.map((loan) => {
+    const l = loan as Record<string, unknown>;
+    return {
+      'Loan ID': l['id'] ?? 'N/A',
+      'Applicant Name': l['name'] ?? 'N/A',
+      'Applicant Email': l['email'] ?? 'N/A',
+      'Applicant Phone': l['phone'] ?? 'N/A',
+      'Loan Amount': l['amount'] ? `৳ ${l['amount']}` : 'N/A',
+      'Status': l['status'] ?? 'DRAFT',
+      'Submitted Date': l['submittedAt'] ? new Date(String(l['submittedAt'])).toLocaleDateString() : 'Not Submitted',
+      'Created Date': new Date(String(l['createdAt'] ?? '')).toLocaleDateString(),
+    };
+  });
 }

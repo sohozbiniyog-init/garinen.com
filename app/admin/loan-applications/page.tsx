@@ -11,7 +11,22 @@ type LoanRecord = {
   status: 'DRAFT' | 'FOLLOW_UP_REQUIRED' | 'SUBMITTED' | 'REVIEWING' | 'APPROVED' | 'REJECTED';
   submittedAt: string | null;
   createdAt: string;
-  application: Record<string, any>;
+  application: {
+    financing?: {
+      bankName?: string;
+      loanAmount?: number;
+      downPayment?: string | number;
+      tenure?: string | number;
+    };
+    vehicle?: {
+      selectedBankName?: string;
+      title?: string;
+      carTitle?: string;
+      listingTitle?: string;
+      loanAmount?: number;
+    };
+    [key: string]: unknown;
+  };
 };
 
 export default function AdminLoanApplicationsPage() {
@@ -41,9 +56,9 @@ export default function AdminLoanApplicationsPage() {
   }, []);
 
   const formatAmount = (amount: string | null) => (amount ? `৳ ${Number(amount).toLocaleString('en-IN')}` : 'N/A');
-  const getBankName = (application: Record<string, any>) => application?.financing?.bankName ?? application?.vehicle?.selectedBankName ?? 'N/A';
-  const getVehicleName = (application: Record<string, any>) => application?.vehicle?.title ?? application?.vehicle?.carTitle ?? application?.vehicle?.listingTitle ?? 'Vehicle not provided';
-  const getLoanAmount = (application: Record<string, any>, fallbackAmount: string | null) => {
+  const getBankName = (application: LoanRecord['application']) => application.financing?.bankName ?? application.vehicle?.selectedBankName ?? 'N/A';
+  const getVehicleName = (application: LoanRecord['application']) => application.vehicle?.title ?? application.vehicle?.carTitle ?? application.vehicle?.listingTitle ?? 'Vehicle not provided';
+  const getLoanAmount = (application: LoanRecord['application'], fallbackAmount: string | null) => {
     const loanAmount = application?.financing?.loanAmount ?? application?.vehicle?.loanAmount;
     if (typeof loanAmount === 'number') {
       return `৳ ${loanAmount.toLocaleString('en-IN')}`;

@@ -208,7 +208,7 @@ export function RequestBookingForm({ listingTitle, listingPrice, onSubmit, isLoa
             <p className="text-sm font-semibold text-ink">How to pay via bKash:</p>
             <ol className="mt-3 space-y-2 text-xs text-smoke">
               <li>1. Open bKash app or dial *247#</li>
-              <li>2. Select "Send Money"</li>
+              <li>2. Select &quot;Send Money&quot;</li>
               <li>3. Enter our merchant number</li>
               <li>4. Enter amount: ৳ {(parseInt(listingPrice.replace(/,/g, '')) * 0.1).toLocaleString()}</li>
               <li>5. Complete transaction and keep reference number</li>

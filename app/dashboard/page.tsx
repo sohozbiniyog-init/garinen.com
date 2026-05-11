@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
+import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,21 +35,17 @@ export default async function DashboardPage() {
   const token = session.data.session?.access_token;
 
   if (token) {
-    const decoded = jwtDecode<any>(token);
-    const claims = decoded.app_metadata?.custom_claims;
-    const userRole = claims?.role as string | undefined;
-    const adminTier = claims?.admin_tier as string | undefined;
+    try {
+      const payload = await verifySupabaseAccessToken(token);
+      const claims = payload?.app_metadata?.custom_claims;
+      const userRole = claims?.role as string | undefined;
 
-    if (userRole === 'ADMIN') {
-      redirect('/admin');
-    }
-
-    if (userRole === 'VENDOR') {
-      redirect('/dashboard/seller');
-    }
-
-    if (userRole === 'BUYER') {
-      redirect('/dashboard/buyer');
+      if (userRole === 'ADMIN') return redirect('/admin');
+      if (userRole === 'VENDOR') return redirect('/dashboard/seller');
+      if (userRole === 'BUYER') return redirect('/dashboard/buyer');
+    } catch (err) {
+      // verification failed - fall through to login
+      console.warn('Token verification failed in dashboard page:', err);
     }
   }
 

@@ -6,6 +6,7 @@ import HeroSearchForm from '@/components/landing/HeroSearch';
 import { CustomerTestimonials } from '@/components/landing/Testimonials';
 import { OffersShowcase, PublicOffer } from '@/components/landing/Offers';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 const highlights = [
   'Public car marketplace',
@@ -77,7 +78,19 @@ async function getApprovedOffers(): Promise<PublicOffer[]> {
   }
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = (await searchParams) ?? {};
+  const code = typeof params.code === 'string' ? params.code : null;
+  const redirectTo = typeof params.redirectTo === 'string' ? params.redirectTo : '/dashboard/buyer';
+
+  if (code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}&redirectTo=${encodeURIComponent(redirectTo)}`);
+  }
+
   const offers = await getApprovedOffers();
 
   return (

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, type ProfessionType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
@@ -166,7 +166,8 @@ export async function POST(request: NextRequest) {
         throw new Error('USER_LOOKUP_FAILED');
       }
 
-      const depositAmount = new Prisma.Decimal(listing.price.toString()).mul(new Prisma.Decimal('0.10'));
+      const professionValue: ProfessionType | undefined =
+        typeof profession === 'string' && profession ? (profession as unknown as ProfessionType) : undefined;
 
       const booking = await tx.booking.create({
         data: {
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
           status: 'PENDING',
           paymentStatus: 'PENDING',
           address: String(address),
-          profession: (typeof profession === 'string' && profession) ? (profession as any) : undefined,
+          profession: professionValue,
           paymentReference: `BK-${Date.now()}`,
           idempotencyKey: resolvedIdempotencyKey,
           emiDetails: {
@@ -183,7 +184,7 @@ export async function POST(request: NextRequest) {
             buyerPhone: String(buyerPhone),
             buyerEmail: String(buyerEmail).toLowerCase(),
             address: String(address),
-            profession: typeof profession === 'string' ? profession : null,
+            profession: typeof profession === 'string' ? (profession as string) : null,
             listingTitle: listing.title,
           },
         },

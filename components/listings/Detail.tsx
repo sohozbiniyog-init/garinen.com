@@ -8,6 +8,7 @@ import { ReviewForm, ReviewSubmitData } from '@/components/forms/ReviewForm';
 import { ReviewCard } from '@/components/buyers/ReviewCard';
 import { addDraft } from '@/lib/config/emi-apps';
 import { showToast } from '@/components/common/Toast';
+import { PROFESSION_OPTIONS, type ProfessionType } from '@/lib/professions';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 
 interface ListingDetailPageProps {
@@ -29,13 +30,12 @@ type TestDriveFormData = {
   contactPhone: string;
   contactEmail: string;
   address: string;
-  profession: 'DOCTOR' | 'ENGINEER' | 'BUSINESSMAN' | 'EMPLOYEE' | 'STUDENT' | 'OTHER';
+  profession: ProfessionType;
   preferredDate: string;
   preferredTime: string;
 };
 
 const TEST_DRIVE_TIMES = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '5:00 PM'];
-const TEST_DRIVE_PROFESSIONS: Array<TestDriveFormData['profession']> = ['DOCTOR', 'ENGINEER', 'BUSINESSMAN', 'EMPLOYEE', 'STUDENT', 'OTHER'];
 
 const defaultTestDriveFormData: TestDriveFormData = {
   contactName: '',
@@ -523,9 +523,9 @@ export function ListingDetail({
                             onChange={handleTestDriveChange}
                             className="mt-2 w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-red/25"
                           >
-                            {TEST_DRIVE_PROFESSIONS.map((profession) => (
-                              <option key={profession} value={profession}>
-                                {profession}
+                            {PROFESSION_OPTIONS.filter((opt) => opt.value !== '').map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
                               </option>
                             ))}
                           </select>

@@ -33,6 +33,18 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
     }
   }, [initialNotice]);
 
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (err instanceof Error) {
+      return err.message || fallback;
+    }
+
+    if (typeof err === 'object' && err !== null && 'message' in err) {
+      const message = (err as { message?: unknown }).message;
+      return typeof message === 'string' && message ? message : fallback;
+    }
+
+    return fallback;
+  };
   const submitAuth = async (payload: Record<string, unknown>) => {
     setLoading(true);
     setError('');
@@ -61,8 +73,8 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
       // For signin: redirect to dashboard
       showToast('Signed in successfully', { type: 'success' });
       router.push(data.redirectTo || '/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Failed to authenticate');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to authenticate'));
     } finally {
       setLoading(false);
     }

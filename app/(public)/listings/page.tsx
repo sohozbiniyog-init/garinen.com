@@ -33,7 +33,7 @@ function ListingsContent() {
   const searchParams = useSearchParams();
   const [searchBrand, setSearchBrand] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
-  const [conditionFilter, setConditionFilter] = useState<'all' | Listing['condition']>('all');
+  const [conditionFilter] = useState<'all' | Listing['condition']>('all');
   const [sortOption, setSortOption] = useState<'none' | 'price-asc' | 'price-desc' | 'year-desc' | 'location-asc'>('none');
   const [budgetFilter, setBudgetFilter] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -200,7 +200,7 @@ function ListingsContent() {
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">Sort</span>
             <select
               value={sortOption}
-              onChange={(e) => setSortOption(e.target.value as any)}
+              onChange={(e) => setSortOption(e.target.value as typeof sortOption)}
               className="glass-field w-full rounded-xl px-4 py-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
             >
               <option value="none">Relevance (default)</option>

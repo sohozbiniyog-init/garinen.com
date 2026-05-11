@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { jwtDecode } from 'jwt-decode';
+import { NextRequest } from 'next/server';
+import { AdminTier } from '@prisma/client';
+import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
@@ -17,15 +18,18 @@ export async function POST(request: NextRequest) {
       return jsonWithCookies({ error: 'Unauthorized: No session' }, 401, pendingCookies);
     }
 
-    // Decode JWT to check admin tier
-    const decoded = jwtDecode<any>(session.access_token);
-    const adminTier = decoded.app_metadata?.custom_claims?.admin_tier;
-
-    if (adminTier !== 'SUPER_ADMIN') {
-      return jsonWithCookies({ error: 'Forbidden: Only SUPER_ADMIN can create admin accounts' }, 403, pendingCookies);
+    // Verify token and check admin tier
+    let currentAdminEmail: string | undefined = undefined;
+    try {
+      const payload = await verifySupabaseAccessToken(session.access_token);
+      const adminTier = payload?.app_metadata?.custom_claims?.admin_tier;
+      if (adminTier !== 'SUPER_ADMIN') {
+        return jsonWithCookies({ error: 'Forbidden: Only SUPER_ADMIN can create admin accounts' }, 403, pendingCookies);
+      }
+      currentAdminEmail = payload?.email;
+    } catch (err) {
+      return jsonWithCookies({ error: 'Unauthorized: invalid token' }, 401, pendingCookies);
     }
-
-    const currentAdminEmail = decoded.email;
 
     // Parse request body
     const body = await request.json();
@@ -71,7 +75,7 @@ export async function POST(request: NextRequest) {
         name,
         phone: phone || undefined,
         passwordHash,
-        tier: tier as any,
+        tier: tier as AdminTier,
         createdBy: currentAdminEmail,
       },
       select: {
@@ -103,10 +107,11 @@ export async function POST(request: NextRequest) {
             },
           },
         });
-      } catch (authError: any) {
+      } catch (authError: unknown) {
         // If Supabase creation fails but Prisma succeeded, delete the Prisma record
         await prisma.adminAccount.delete({ where: { id: newAdmin.id } });
-        throw new Error(`Failed to create Supabase user: ${authError.message}`);
+        const message = authError instanceof Error ? authError.message : 'Unknown error';
+        throw new Error(`Failed to create Supabase user: ${message}`);
       }
     }
 

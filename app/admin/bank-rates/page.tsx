@@ -3,12 +3,32 @@
 import { useBankRates, Bank, BankScheme } from '@/lib/contexts/bank-rates';
 import { useState } from 'react';
 
+type SchemeDraft = {
+  rate?: number;
+  maxTenure?: number;
+  maxLtv?: number;
+};
+
+type TempValue = string | SchemeDraft;
+
+const getSchemeDraft = (value: TempValue | undefined): SchemeDraft | undefined => {
+  if (typeof value === 'object' && value !== null) {
+    return value;
+  }
+
+  return undefined;
+};
+
+const getBankNameDraft = (value: TempValue | undefined): string => {
+  return typeof value === 'string' ? value : '';
+};
+
 export default function AdminBankRatesPage() {
   const { banks, addBank, removeBank, updateBank, addScheme, updateScheme, removeScheme } = useBankRates();
   const [newBankName, setNewBankName] = useState('');
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [editingScheme, setEditingScheme] = useState<{ bankId: string; schemeId: string } | null>(null);
-  const [temp, setTemp] = useState<Record<string, any>>({});
+  const [temp, setTemp] = useState<Record<string, TempValue>>({});
 
   return (
     <main className="min-h-screen w-full px-6 py-10 lg:px-10">
@@ -40,8 +60,8 @@ export default function AdminBankRatesPage() {
 
               {editingBankId === bank.id && (
                 <div className="mb-4 flex gap-2">
-                  <input value={temp[bank.id]||''} onChange={(e)=>setTemp((t)=>({...t, [bank.id]: e.target.value}))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
-                  <button onClick={()=>{ updateBank(bank.id, { name: temp[bank.id] }); setEditingBankId(null); }} className="glass-button rounded-full px-3 py-2 text-sm font-semibold text-white">Save</button>
+                  <input value={getBankNameDraft(temp[bank.id])} onChange={(e)=>setTemp((t)=>({...t, [bank.id]: e.target.value}))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
+                  <button onClick={()=>{ updateBank(bank.id, { name: getBankNameDraft(temp[bank.id]) || bank.name }); setEditingBankId(null); }} className="glass-button rounded-full px-3 py-2 text-sm font-semibold text-white">Save</button>
                   <button onClick={()=>setEditingBankId(null)} className="rounded-full border border-white/30 bg-white/80 px-3 py-2 text-sm text-ink">Cancel</button>
                 </div>
               )}
@@ -62,11 +82,11 @@ export default function AdminBankRatesPage() {
 
                     {editingScheme?.bankId === bank.id && editingScheme?.schemeId === scheme.id && (
                       <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
-                        <input type="number" step="0.5" min="6" max="24" value={temp[scheme.id]?.rate ?? scheme.rate} onChange={(e)=>setTemp((t)=>({...t, [scheme.id]: {...t[scheme.id], rate: parseFloat(e.target.value)}}))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
-                        <input type="number" min="12" max="84" value={temp[scheme.id]?.maxTenure ?? scheme.maxTenure} onChange={(e)=>setTemp((t)=>({...t, [scheme.id]: {...t[scheme.id], maxTenure: parseInt(e.target.value)}}))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
-                        <input type="number" min="30" max="100" value={temp[scheme.id]?.maxLtv ?? scheme.maxLtv} onChange={(e)=>setTemp((t)=>({...t, [scheme.id]: {...t[scheme.id], maxLtv: parseInt(e.target.value)}}))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
+                        <input type="number" step="0.5" min="6" max="24" value={getSchemeDraft(temp[scheme.id])?.rate ?? scheme.rate} onChange={(e)=>setTemp((current)=>({ ...current, [scheme.id]: { ...getSchemeDraft(current[scheme.id]), rate: parseFloat(e.target.value) } }))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
+                        <input type="number" min="12" max="84" value={getSchemeDraft(temp[scheme.id])?.maxTenure ?? scheme.maxTenure} onChange={(e)=>setTemp((current)=>({ ...current, [scheme.id]: { ...getSchemeDraft(current[scheme.id]), maxTenure: parseInt(e.target.value) } }))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
+                        <input type="number" min="30" max="100" value={getSchemeDraft(temp[scheme.id])?.maxLtv ?? scheme.maxLtv} onChange={(e)=>setTemp((current)=>({ ...current, [scheme.id]: { ...getSchemeDraft(current[scheme.id]), maxLtv: parseInt(e.target.value) } }))} className="glass-field rounded-lg px-3 py-2 text-sm text-ink" />
                         <div className="md:col-span-3 flex gap-2">
-                          <button onClick={()=>{ updateScheme(bank.id, scheme.id, { rate: temp[scheme.id]?.rate ?? scheme.rate, maxTenure: temp[scheme.id]?.maxTenure ?? scheme.maxTenure, maxLtv: temp[scheme.id]?.maxLtv ?? scheme.maxLtv }); setEditingScheme(null); }} className="glass-button rounded-full px-4 py-2 text-sm font-semibold text-white">Save Scheme</button>
+                          <button onClick={()=>{ const draft = getSchemeDraft(temp[scheme.id]); updateScheme(bank.id, scheme.id, { rate: draft?.rate ?? scheme.rate, maxTenure: draft?.maxTenure ?? scheme.maxTenure, maxLtv: draft?.maxLtv ?? scheme.maxLtv }); setEditingScheme(null); }} className="glass-button rounded-full px-4 py-2 text-sm font-semibold text-white">Save Scheme</button>
                           <button onClick={()=>setEditingScheme(null)} className="rounded-full border border-white/30 bg-white/80 px-4 py-2 text-sm text-ink">Cancel</button>
                         </div>
                       </div>

@@ -5,6 +5,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
+const getErrorMessage = (err: unknown, fallback: string) => {
+  if (err instanceof Error) {
+    return err.message || fallback;
+  }
+
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    const message = (err as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+
+  return fallback;
+};
+
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [newPassword, setNewPassword] = useState('');
@@ -21,9 +34,52 @@ export default function ResetPasswordPage() {
     );
 
     const validateRecoverySession = async () => {
+      const currentUrl = new URL(window.location.href);
+      const hashParams = new URLSearchParams(currentUrl.hash.startsWith('#') ? currentUrl.hash.slice(1) : '');
+      const code = currentUrl.searchParams.get('code');
+      const tokenHash = currentUrl.searchParams.get('token_hash') || hashParams.get('token_hash');
+      const accessToken = currentUrl.searchParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = currentUrl.searchParams.get('refresh_token') || hashParams.get('refresh_token');
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          setError('This recovery link is invalid or expired. Request a new one from the sign-in page.');
+          setReady(false);
+          return;
+        }
+      } else if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: 'recovery',
+        });
+
+        if (error) {
+          setError('This recovery link is invalid or expired. Request a new one from the sign-in page.');
+          setReady(false);
+          return;
+        }
+      } else if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) {
+          setError('This recovery link is invalid or expired. Request a new one from the sign-in page.');
+          setReady(false);
+          return;
+        }
+      }
+
       const { data } = await supabase.auth.getSession();
       if (data.session) {
+        if (code || accessToken || refreshToken) {
+          router.replace('/reset-password');
+        }
+
         setReady(true);
+        setError('');
         return;
       }
 
@@ -68,8 +124,8 @@ export default function ResetPasswordPage() {
       await supabase.auth.signOut();
       setMessage('Password updated successfully. Redirecting you to sign in.');
       router.push('/login?message=password-updated');
-    } catch (err: any) {
-      setError(err.message || 'Failed to update password');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to update password'));
     } finally {
       setLoading(false);
     }

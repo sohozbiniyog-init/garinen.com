@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Route } from 'next';
 
 export type PublicOffer = {
   id: string;
@@ -75,7 +76,7 @@ export function OffersShowcase({ offers = [] }: { offers?: PublicOffer[] }) {
 
               <div className="flex items-center justify-between gap-4">
                 <Link
-                  href={offer.ctaHref as any}
+                  href={offer.ctaHref as Route}
                   className="inline-flex items-center justify-center rounded-full bg-brand-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-red-deep"
                 >
                   {offer.ctaLabel}

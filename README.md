@@ -5,6 +5,7 @@ Next.js 15 + Supabase + Prisma automotive marketplace with admin, vendor, and bu
 ## Quick Start
 
 1. Install dependencies: `npm install`
+   - If you pulled recent changes, run `npm install` again to add `jose` used by `middleware.ts`.
 2. Copy `.env.example` to `.env.local`
 3. Run dev server: `npm run dev`
 4. Open `http://localhost:3000`

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter listings by location if specified
-    const query: any = {
+    const query: Prisma.ListingWhereInput = {
       status: 'APPROVED',
     };
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { jwtDecode } from 'jwt-decode';
+import { getCustomClaimsFromSupabaseJwt } from './lib/auth/jwt-claims';
 
 /**
  * Edge-safe middleware for route protection
@@ -50,22 +50,27 @@ export async function middleware(request: NextRequest) {
     try {
       // Get the session to access the JWT
       const sessionData = await supabase.auth.getSession();
-      if (sessionData.data.session?.access_token) {
-        const decoded = jwtDecode<any>(sessionData.data.session.access_token);
-        const customClaims = decoded.app_metadata?.custom_claims;
-        
-        if (customClaims) {
-          userRole = customClaims.role || null;
-          adminTier = customClaims.admin_tier || null;
-          vendorApprovalStatus = customClaims.vendor_approval_status || null;
-        }
+      const token = sessionData.data.session?.access_token;
+      if (token) {
+        const claims = await getCustomClaimsFromSupabaseJwt(token);
+        userRole = claims.role;
+        adminTier = claims.admin_tier;
+        vendorApprovalStatus = claims.vendor_approval_status;
       }
     } catch (err) {
-      console.warn('Failed to decode JWT claims:', err);
+      console.warn('Failed to verify JWT claims:', err);
+      // If token verification fails, treat user as unauthenticated
+      userRole = null;
+      adminTier = null;
+      vendorApprovalStatus = null;
     }
   }
 
   const redirectTo = (path: string) => {
+    // Prevent open redirects by ensuring `path` is an internal path beginning with '/'
+    if (!path.startsWith('/')) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
     const redirectResponse = NextResponse.redirect(new URL(path, request.url));
     response.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie);
@@ -128,3 +133,4 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/dashboard/:path*', '/admin/:path*', '/vendor/:path*'],
 };
+

@@ -1,5 +1,17 @@
 import { NextResponse } from 'next/server';
+import type { LoanStatus } from '@prisma/client';
+
+type LoanApplicationStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+
+const ALLOWED_LOAN_STATUSES = new Set<LoanApplicationStatus>([
+  'DRAFT',
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'APPROVED',
+  'REJECTED',
+]);
 import { prisma } from '@/lib/db/prisma';
+
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +24,10 @@ export async function POST(req: Request) {
     const applicantPhone = application?.buyer?.phone ?? application?.phone ?? null;
     const amount = application?.financing?.loanAmount ?? null;
 
+    const resolvedStatus = typeof status === 'string' && ALLOWED_LOAN_STATUSES.has(status as LoanApplicationStatus)
+      ? (status as LoanApplicationStatus)
+      : 'DRAFT';
+
     const created = await prisma.loanApplication.create({
       data: {
         userId: userId ?? undefined,
@@ -20,8 +36,8 @@ export async function POST(req: Request) {
         phone: applicantPhone,
         amount: amount !== null ? amount : undefined,
         application: application ?? {},
-        status: status as any,
-        submittedAt: status === 'SUBMITTED' ? new Date() : undefined
+        status: resolvedStatus as unknown as LoanStatus,
+        submittedAt: resolvedStatus === 'SUBMITTED' ? new Date() : undefined
       }
     });
 

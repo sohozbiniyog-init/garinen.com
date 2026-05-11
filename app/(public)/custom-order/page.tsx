@@ -129,7 +129,7 @@ export default function CustomOrderPage() {
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Custom Import</p>
         <h1 className="mt-3 text-4xl font-bold text-white">Request Your Dream Car</h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-          Can't find the car you're looking for in our listings? Tell us your requirements, and we'll help you import it from abroad. Our team will source the perfect vehicle that matches your budget and preferences.
+          Can&apos;t find the car you&apos;re looking for in our listings? Tell us your requirements, and we&apos;ll help you import it from abroad. Our team will source the perfect vehicle that matches your budget and preferences.
         </p>
       </section>
 
@@ -246,7 +246,7 @@ export default function CustomOrderPage() {
               <span className="font-bold text-moss">3</span>
             </div>
             <h4 className="mb-2 font-semibold text-slate-900">Quote & Purchase</h4>
-            <p className="text-sm text-slate-600">We'll send you quotes and help you complete the purchase.</p>
+            <p className="text-sm text-slate-600">We&apos;ll send you quotes and help you complete the purchase.</p>
           </div>
         </div>
       </section>

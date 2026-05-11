@@ -9,7 +9,7 @@ interface CacheEntry<T> {
 }
 
 class MemoryCache {
-  private store = new Map<string, CacheEntry<any>>();
+  private store = new Map<string, CacheEntry<unknown>>();
 
   /**
    * Set a value in the cache with optional TTL (in milliseconds).
@@ -73,7 +73,7 @@ const globalCache = new MemoryCache();
  */
 export const cacheKeys = {
   listing: (id: string) => `listing:${id}`,
-  listings: (filters?: Record<string, any>) => `listings:${JSON.stringify(filters || {})}`,
+  listings: (filters?: Record<string, unknown>) => `listings:${JSON.stringify(filters || {})}`,
   offer: (id: string) => `offer:${id}`,
   offers: (status?: string) => `offers:${status || 'all'}`,
   user: (id: string) => `user:${id}`,
@@ -110,7 +110,7 @@ export const cacheService = {
    */
   getListings: async <T extends { id: string }>(
     fetcher: () => Promise<T[]>,
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   ): Promise<T[]> => {
     const cacheKey = cacheKeys.listings(filters);
     const cached = globalCache.get<T[]>(cacheKey);

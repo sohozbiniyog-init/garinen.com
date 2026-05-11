@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -95,9 +96,9 @@ export default function HeroSearchForm() {
 
         {/* Advanced Search Link */}
         <div className="text-center pt-2">
-          <a href="/listings" className="text-xs font-semibold text-brand-red transition hover:text-white hover:underline">
+          <Link href="/listings" className="text-xs font-semibold text-brand-red transition hover:text-white hover:underline">
             Advanced Search →
-          </a>
+          </Link>
         </div>
       </form>
     </div>

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
 import { createBrowserClient } from '@supabase/ssr';
 import { showToast } from '@/components/common/Toast';
 
@@ -42,16 +41,14 @@ export default function AdminManagementPage() {
   useEffect(() => {
     const checkAdminTier = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-
-        if (!token) {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) {
           router.push('/login');
           return;
         }
 
-        const decoded = jwtDecode<any>(token);
-        const tier = decoded.app_metadata?.custom_claims?.admin_tier;
+        const json = await res.json();
+        const tier = json?.claims?.admin_tier;
 
         if (tier !== 'SUPER_ADMIN') {
           showToast('Only SUPER_ADMIN can access this page', { type: 'error' });

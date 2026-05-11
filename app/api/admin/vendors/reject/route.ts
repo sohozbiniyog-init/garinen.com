@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Update vendor approval status and add rejection reason
-    const prevInfo: any = vendor.vendorInfo || {};
+    const prevInfo = (vendor.vendorInfo as Record<string, unknown> | null) ?? {};
     const updatedVendor = await prisma.user.update({
       where: { id: vendorId },
       data: {

@@ -81,7 +81,7 @@ export function jsonWithCookies(
 ) {
   const response = NextResponse.json(body, { status });
   pendingCookies.forEach(({ name, value, options }) => {
-    response.cookies.set(name, value, options as any);
+    response.cookies.set(name, value, secureCookieOptions((options ?? {}) as Record<string, unknown>));
   });
   return response;
 }
@@ -89,7 +89,7 @@ export function jsonWithCookies(
 export function redirectWithCookies(url: string, pendingCookies: PendingCookie[]) {
   const response = NextResponse.redirect(url);
   pendingCookies.forEach(({ name, value, options }) => {
-    response.cookies.set(name, value, options as any);
+    response.cookies.set(name, value, secureCookieOptions((options ?? {}) as Record<string, unknown>));
   });
   return response;
 }

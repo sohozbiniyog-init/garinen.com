@@ -38,7 +38,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const isOwner = booking.listing.shop.ownerId === session.userId;
-    const canUpdate = session.userRole === 'ADMIN' || (session.userRole === 'VENDOR' && isOwner && VENDOR_BOOKING_STATUSES.includes(booking.status as any));
+    const canUpdate =
+      session.userRole === 'ADMIN' ||
+      (session.userRole === 'VENDOR' && isOwner && VENDOR_BOOKING_STATUSES.includes(String(booking.status) as (typeof VENDOR_BOOKING_STATUSES)[number]));
 
     if (!canUpdate) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

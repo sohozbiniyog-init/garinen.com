@@ -138,9 +138,9 @@ export function SiteFooter() {
                 By Brand
               </Link>
 
-              <a href="/listings?location=Dhaka" className="text-sm text-slate-300 transition hover:text-white">
+              <Link href="/listings?location=Dhaka" className="text-sm text-slate-300 transition hover:text-white">
                 By Location
-              </a>
+              </Link>
             </nav>
           </div>
 
