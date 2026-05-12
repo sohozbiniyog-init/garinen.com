@@ -80,6 +80,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (status === 'APPROVED') {
+      await prisma.shop.upsert({
+        where: { ownerId: userId },
+        create: {
+          ownerId: userId,
+          name: user.name,
+          isVerified: true,
+        },
+        update: {
+          isVerified: true,
+        },
+      });
+    }
+
     // Vendor approval status is stored in Prisma (source of truth)
     // Supabase metadata is optional - database is the authoritative store
 

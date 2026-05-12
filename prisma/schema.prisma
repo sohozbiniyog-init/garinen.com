@@ -106,6 +106,7 @@ model User {
   // Vendor fields
   vendorApprovalStatus  VendorApprovalStatus?
   vendorInfo            Json?  // Stores: shopName, description, category, etc.
+  vendorOnboardingCreatedAt DateTime? // Grace period: 7 days from signup to complete onboarding
   
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

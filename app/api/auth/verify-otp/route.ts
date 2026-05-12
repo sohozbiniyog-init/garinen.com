@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { syncUserProfile } from '@/lib/auth/profile';
+import { isPendingVendorWithinGracePeriod } from '@/lib/auth/vendor-grace-period';
 import {
   createSupabaseRouteClient,
   jsonWithCookies,
@@ -97,15 +98,31 @@ export async function POST(req: NextRequest) {
         role: true,
         adminTier: true,
         vendorApprovalStatus: true,
+        vendorOnboardingCreatedAt: true,
       },
     });
 
     const desiredRoleFromMetadata = authUser.user_metadata?.signup_role === 'VENDOR' ? 'VENDOR' : 'BUYER';
-    const role = existing?.role ?? (mode === 'signup' ? desiredRoleFromMetadata : 'BUYER');
-    const vendorApprovalStatus =
-      role === 'VENDOR'
-        ? existing?.vendorApprovalStatus ?? 'PENDING'
-        : existing?.vendorApprovalStatus ?? undefined;
+    const pendingVendorWithinGracePeriod = isPendingVendorWithinGracePeriod(
+      existing?.vendorApprovalStatus,
+      existing?.vendorOnboardingCreatedAt
+    );
+
+    const role = existing?.role === 'ADMIN'
+      ? 'ADMIN'
+      : pendingVendorWithinGracePeriod
+        ? 'BUYER'
+        : existing?.vendorApprovalStatus === 'APPROVED'
+          ? existing?.role ?? 'BUYER'
+          : mode === 'signup'
+            ? desiredRoleFromMetadata
+            : 'BUYER';
+
+    const vendorApprovalStatus = pendingVendorWithinGracePeriod
+      ? 'PENDING'
+      : existing?.vendorApprovalStatus === 'APPROVED'
+        ? 'APPROVED'
+        : undefined;
 
     const profile = await syncUserProfile({
       email,
@@ -117,6 +134,7 @@ export async function POST(req: NextRequest) {
       role,
       adminTier: existing?.adminTier ?? undefined,
       vendorApprovalStatus,
+      vendorOnboardingCreatedAt: pendingVendorWithinGracePeriod ? existing?.vendorOnboardingCreatedAt ?? undefined : undefined,
     });
 
     // Set Supabase Custom Claims for JWT-based role propagation
@@ -126,6 +144,9 @@ export async function POST(req: NextRequest) {
         role: profile.role,
         admin_tier: profile.adminTier || null,
         vendor_approval_status: profile.vendorApprovalStatus || null,
+        vendor_onboarding_created_at: profile.vendorOnboardingCreatedAt
+          ? profile.vendorOnboardingCreatedAt.toISOString()
+          : null,
       };
 
       await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
@@ -142,10 +163,11 @@ export async function POST(req: NextRequest) {
     const redirectTo =
       profile.role === 'ADMIN'
         ? '/admin'
-        : profile.role === 'VENDOR'
-          ? profile.vendorApprovalStatus === 'PENDING'
+        : profile.vendorApprovalStatus === 'PENDING' && profile.vendorOnboardingCreatedAt && isPendingVendorWithinGracePeriod(profile.vendorApprovalStatus, profile.vendorOnboardingCreatedAt)
             ? '/vendor/onboarding'
-            : '/dashboard/seller'
+            : profile.role === 'VENDOR'
+              ? '/dashboard/seller'
+              : '/dashboard/buyer'
           : '/dashboard';
 
     return jsonWithCookies({

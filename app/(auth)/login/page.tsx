@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthCard } from '@/components/auth/Card';
 import { createBrowserClient } from '@supabase/ssr';
+import { isPendingVendorWithinGracePeriod } from '@/lib/auth/vendor-grace-period';
 
 function LoginContent() {
   const router = useRouter();
@@ -35,17 +36,18 @@ function LoginContent() {
         try {
           const res = await fetch('/api/auth/me');
           const json = await res.json();
-          const role = json?.claims?.role || 'BUYER';
+          const role = json?.profile?.role || json?.claims?.role || 'BUYER';
+          const vendorApprovalStatus = json?.profile?.vendorApprovalStatus || json?.claims?.vendor_approval_status || null;
+          const vendorOnboardingCreatedAt = json?.profile?.vendorOnboardingCreatedAt || json?.claims?.vendor_onboarding_created_at || null;
+          const isPendingVendor = isPendingVendorWithinGracePeriod(vendorApprovalStatus, vendorOnboardingCreatedAt);
           const target = (window as Window & { __loginRedirectPath?: string }).__loginRedirectPath || redirectPath;
 
           if (role === 'ADMIN') {
             router.replace('/admin');
-          } else if (role === 'VENDOR') {
-            if (json?.claims?.vendor_approval_status === 'PENDING') {
-              router.replace('/vendor/onboarding');
-            } else {
-              router.replace('/dashboard/seller');
-            }
+          } else if (isPendingVendor) {
+            router.replace('/vendor/onboarding');
+          } else if (role === 'VENDOR' && vendorApprovalStatus === 'APPROVED') {
+            router.replace('/dashboard/seller');
           } else {
             router.replace(target as Parameters<typeof router.replace>[0]);
           }

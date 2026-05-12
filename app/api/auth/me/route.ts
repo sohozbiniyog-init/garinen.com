@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
           role: true,
           adminTier: true,
           vendorApprovalStatus: true,
+          vendorOnboardingCreatedAt: true,
           profession: true,
         },
       })
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
               role: 'BUYER',
               admin_tier: null,
               vendor_approval_status: null,
+              vendor_onboarding_created_at: null,
             },
           },
           { status: 200 }
@@ -57,6 +59,7 @@ export async function GET(request: NextRequest) {
             role: profile.role || 'BUYER',
             admin_tier: profile.adminTier || null,
             vendor_approval_status: profile.vendorApprovalStatus || null,
+            vendor_onboarding_created_at: profile.vendorOnboardingCreatedAt ? profile.vendorOnboardingCreatedAt.toISOString() : null,
           },
         },
         { status: 200 }
@@ -72,6 +75,7 @@ export async function GET(request: NextRequest) {
             role: 'BUYER',
             admin_tier: null,
             vendor_approval_status: null,
+            vendor_onboarding_created_at: null,
           },
         },
         { status: 200 }

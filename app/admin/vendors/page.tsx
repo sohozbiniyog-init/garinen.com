@@ -13,11 +13,22 @@ interface VendorApplication {
   phone?: string;
   vendorInfo?: {
     shopName?: string;
+    category?: string;
+    locationDivision?: string;
+    locationAddress?: string;
+    description?: string;
+    phone?: string;
     [key: string]: unknown;
   };
   vendorApprovalStatus: string;
   createdAt: string;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  new: 'নতুন গাড়ি বিক্রেতা',
+  used: 'ব্যবহৃত গাড়ি বিক্রেতা',
+  reconditioned: 'রি-কন্ডিশন গাড়ী বিক্রেতা',
+};
 
 export default function VendorApprovalsPage() {
   const router = useRouter();
@@ -185,6 +196,21 @@ export default function VendorApprovalsPage() {
                   {vendor.vendorInfo?.shopName && (
                     <p className="mt-1 text-xs text-slate-500">
                       Shop: {vendor.vendorInfo.shopName}
+                    </p>
+                  )}
+                  {vendor.vendorInfo?.category && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Category: {CATEGORY_LABELS[vendor.vendorInfo.category] || vendor.vendorInfo.category}
+                    </p>
+                  )}
+                  {(vendor.vendorInfo?.locationDivision || vendor.vendorInfo?.locationAddress) && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Location: {vendor.vendorInfo.locationDivision}{vendor.vendorInfo.locationAddress ? `, ${vendor.vendorInfo.locationAddress}` : ''}
+                    </p>
+                  )}
+                  {vendor.vendorInfo?.description && (
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+                      {vendor.vendorInfo.description}
                     </p>
                   )}
                   <p className="mt-1 text-xs text-slate-500">

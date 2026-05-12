@@ -28,6 +28,14 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
   const [showVendorTOS, setShowVendorTOS] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState<string>('/dashboard');
 
+  const createTraceId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+
+    return `trace_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  };
+
   useEffect(() => {
     if (initialNotice) {
       setMessage(initialNotice);
@@ -59,23 +67,51 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
     setError('');
     setMessage('');
 
+    const traceId = createTraceId();
+    const isVendorSignup = payload.mode === 'signup' && Boolean(payload.isVendor);
+
     try {
       const res = await fetch('/api/auth/password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trace-id': traceId,
+        },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        console.error('vendor-signup-auth-failed', {
+          traceId,
+          isVendorSignup,
+          mode: payload.mode,
+          email: typeof payload.email === 'string' ? payload.email : undefined,
+          status: res.status,
+          error: data?.error,
+        });
         throw new Error(data?.error || 'Failed to authenticate');
       }
 
-      // For signup: show success and redirect to login
+      if (isVendorSignup) {
+        console.info('vendor-signup-auth-success', {
+          traceId,
+          redirectTo: data?.redirectTo,
+          email: typeof payload.email === 'string' ? payload.email : undefined,
+        });
+      }
+
+      // For signup: follow the server-directed post-signup destination
       if (mode === 'signup') {
-        showToast('Account created successfully! Redirecting to login...', { type: 'success' });
-        router.push('/login');
+        const nextTarget = typeof data?.redirectTo === 'string' && data.redirectTo ? data.redirectTo : '/dashboard/buyer';
+        showToast(
+          nextTarget === '/vendor/onboarding'
+            ? 'Account created successfully! Redirecting to vendor onboarding...'
+            : 'Account created successfully! Redirecting to your dashboard...',
+          { type: 'success' }
+        );
+        router.push(nextTarget);
         return;
       }
 
@@ -83,6 +119,12 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
       showToast('Signed in successfully', { type: 'success' });
       router.push(redirectTarget || data.redirectTo || '/dashboard');
     } catch (err: unknown) {
+      console.error('vendor-signup-auth-exception', {
+        traceId,
+        mode: payload.mode,
+        isVendorSignup,
+        error: err,
+      });
       setError(getErrorMessage(err, 'Failed to authenticate'));
     } finally {
       setLoading(false);
@@ -328,11 +370,17 @@ export function AuthCard({ initialMode = 'signin', initialNotice = '' }: AuthCar
       <VendorTOSModal
         isOpen={showVendorTOS}
         onDecline={() => {
+          console.warn('vendor-signup-tos-declined', {
+            email: email.trim().toLowerCase() || null,
+          });
           setShowVendorTOS(false);
           setWantToSignupAsVendor(false);
         }}
         onAccept={async () => {
           setShowVendorTOS(false);
+          console.info('vendor-signup-tos-accepted', {
+            email: email.trim().toLowerCase() || null,
+          });
           // Password-only flow - no OTP needed
           await submitAuth({
             mode: 'signup',

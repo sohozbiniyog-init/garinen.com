@@ -4,6 +4,7 @@ export type JwtCustomClaims = {
   role: string | null;
   admin_tier: string | null;
   vendor_approval_status: string | null;
+  vendor_onboarding_created_at: string | null;
 };
 
 type VerifyFn = (
@@ -49,5 +50,6 @@ export async function getCustomClaimsFromSupabaseJwt(
     role: customClaims?.role ?? null,
     admin_tier: customClaims?.admin_tier ?? null,
     vendor_approval_status: customClaims?.vendor_approval_status ?? null,
+    vendor_onboarding_created_at: customClaims?.vendor_onboarding_created_at ?? null,
   };
 }

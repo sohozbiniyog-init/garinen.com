@@ -6,11 +6,13 @@ import { verifyAdminCredentials } from '@/lib/auth/admin-db';
 import { syncUserProfile } from '@/lib/auth/profile';
 import { normalizeBangladeshPhone } from '@/lib/auth/phone';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
+import { isPendingVendorWithinGracePeriod, isVendorGracePeriodExpired } from '@/lib/auth/vendor-grace-period';
 
 type AuthMode = 'signin' | 'signup';
 
 export async function POST(request: NextRequest) {
   const pendingCookies: PendingCookie[] = [];
+  const traceId = request.headers.get('x-trace-id') || crypto.randomUUID();
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
@@ -24,6 +26,14 @@ export async function POST(request: NextRequest) {
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
     const isVendor = Boolean(body.isVendor);
+
+    console.info('auth-password-request', {
+      traceId,
+      mode,
+      isVendor,
+      email,
+      hasPassword: Boolean(password),
+    });
 
     if (!email || !mode || (mode === 'signin' && !password)) {
       return jsonWithCookies({ error: 'Missing required fields' }, 400, pendingCookies);
@@ -70,28 +80,55 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Password-based signup (no OTP)
+    // Password-based signup (no OTP or email confirmation in the normal prod path)
     const authResult =
-      mode === 'signup'
-        ? await supabase.auth.signUp({
-            email: authEmail,
-            password: password,
-            options: {
-              emailRedirectTo: `${request.nextUrl.origin}/auth/callback?redirectTo=${encodeURIComponent(
-                isVendor ? '/vendor/onboarding' : '/dashboard/buyer'
-              )}`,
-              data: {
+      mode === 'signup' && supabaseAdmin
+        ? await (async () => {
+            await supabaseAdmin.auth.admin.createUser({
+              email: authEmail,
+              password,
+              email_confirm: true,
+              user_metadata: {
                 full_name: name,
                 phone: phone || undefined,
+                is_vendor: isVendor,
               },
-            },
-          })
-        : await supabase.auth.signInWithPassword({
-            email: authEmail,
-            password,
-          });
+            }).catch((createError) => {
+              const message = createError instanceof Error ? createError.message : '';
+              if (!message.toLowerCase().includes('already registered')) {
+                throw createError;
+              }
+            });
+
+            return supabase.auth.signInWithPassword({
+              email: authEmail,
+              password,
+            });
+          })()
+        : mode === 'signup'
+          ? await supabase.auth.signUp({
+              email: authEmail,
+              password: password,
+              options: {
+                data: {
+                  full_name: name,
+                  phone: phone || undefined,
+                },
+              },
+            })
+          : await supabase.auth.signInWithPassword({
+              email: authEmail,
+              password,
+            });
 
     if (authResult.error) {
+      console.error('auth-password-auth-result-error', {
+        traceId,
+        mode,
+        email,
+        isVendor,
+        error: authResult.error.message,
+      });
       return jsonWithCookies({ error: authResult.error.message }, 400, pendingCookies);
     }
 
@@ -99,6 +136,12 @@ export async function POST(request: NextRequest) {
     const session = authResult.data.session ?? null;
 
     if (!authUser) {
+      console.error('auth-password-missing-user', {
+        traceId,
+        mode,
+        email,
+        isVendor,
+      });
       return jsonWithCookies({ error: 'Authentication did not return a user' }, 500, pendingCookies);
     }
 
@@ -108,22 +151,53 @@ export async function POST(request: NextRequest) {
         role: true,
         adminTier: true,
         vendorApprovalStatus: true,
+        vendorOnboardingCreatedAt: true,
       },
     });
 
-    // For signin, preserve existing role; for signup, infer from context
+    const pendingVendorWithinGracePeriod = isPendingVendorWithinGracePeriod(
+      currentProfile?.vendorApprovalStatus,
+      currentProfile?.vendorOnboardingCreatedAt
+    );
+
+    if (
+      mode === 'signin' &&
+      currentProfile?.vendorApprovalStatus === 'PENDING' &&
+      !pendingVendorWithinGracePeriod &&
+      currentProfile?.vendorOnboardingCreatedAt
+    ) {
+      console.info('vendor-grace-period-expired', {
+        traceId,
+        email: authUser.email ?? authEmail,
+        gracePeriodStarted: currentProfile.vendorOnboardingCreatedAt,
+      });
+    }
+
+    const isApprovedVendor = currentProfile?.role === 'VENDOR' && currentProfile?.vendorApprovalStatus === 'APPROVED';
+
     const inferredRole = adminBootstrap
       ? 'ADMIN'
-      : mode === 'signin' && currentProfile?.role
-        ? currentProfile.role // Preserve existing role on login
-        : 'BUYER'; // New signups default to BUYER
-    
-    // Determine vendor approval status
+      : mode === 'signin' && pendingVendorWithinGracePeriod
+        ? 'BUYER'
+        : isApprovedVendor
+          ? 'VENDOR'
+          : 'BUYER';
+
     const vendorApprovalStatus = adminBootstrap
       ? currentProfile?.vendorApprovalStatus ?? undefined
       : mode === 'signup' && isVendor
         ? 'PENDING' // Vendor signups stay PENDING until admin approves
-        : currentProfile?.vendorApprovalStatus ?? undefined;
+        : mode === 'signin'
+          ? pendingVendorWithinGracePeriod
+            ? 'PENDING'
+            : isApprovedVendor
+              ? currentProfile.vendorApprovalStatus ?? undefined
+              : undefined
+          : currentProfile?.vendorApprovalStatus ?? undefined;
+
+    const vendorOnboardingCreatedAt = mode === 'signup' && isVendor
+      ? new Date()
+      : currentProfile?.vendorOnboardingCreatedAt ?? undefined;
 
     const profilePhone = adminBootstrap?.phone || normalizedPhone || (authUser.user_metadata?.phone as string | undefined);
 
@@ -133,7 +207,17 @@ export async function POST(request: NextRequest) {
       phone: profilePhone,
       role: inferredRole,
       adminTier: adminBootstrap?.tier ?? currentProfile?.adminTier ?? undefined,
-      vendorApprovalStatus
+      vendorApprovalStatus,
+      vendorOnboardingCreatedAt,
+    });
+
+    console.info('auth-password-profile-synced', {
+      traceId,
+      mode,
+      email: existingProfile.email,
+      role: existingProfile.role,
+      vendorApprovalStatus: existingProfile.vendorApprovalStatus,
+      isVendor,
     });
 
     // Set Supabase Custom Claims for JWT-based role propagation
@@ -143,6 +227,9 @@ export async function POST(request: NextRequest) {
         role: inferredRole,
         admin_tier: existingProfile.adminTier || null,
         vendor_approval_status: existingProfile.vendorApprovalStatus || null,
+        vendor_onboarding_created_at: existingProfile.vendorOnboardingCreatedAt
+          ? existingProfile.vendorOnboardingCreatedAt.toISOString()
+          : null,
       };
 
       await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
@@ -151,21 +238,33 @@ export async function POST(request: NextRequest) {
           custom_claims: claims,
         },
       }).catch((err) => {
-        console.warn('Failed to set custom claims:', err);
+        console.warn('auth-password-custom-claims-failed', {
+          traceId,
+          mode,
+          email: existingProfile.email,
+          error: err,
+        });
         // Non-fatal: proceed without custom claims
       });
     }
 
-    const redirectTo =
-      mode === 'signup'
-        ? '/login' // After signup, redirect to login for user confirmation
-        : adminBootstrap || existingProfile.role === 'ADMIN'
-          ? '/admin'
-          : existingProfile.role === 'VENDOR'
-            ? existingProfile.vendorApprovalStatus === 'PENDING'
-              ? '/vendor/onboarding'
-              : '/dashboard/seller'
-            : '/dashboard/buyer';
+    let redirectTo: string;
+
+    if (mode === 'signup') {
+      redirectTo = isVendor ? '/vendor/onboarding' : '/dashboard/buyer';
+    } else if (adminBootstrap || existingProfile.role === 'ADMIN') {
+      redirectTo = '/admin';
+    } else if (
+      existingProfile.vendorApprovalStatus === 'PENDING' &&
+      existingProfile.vendorOnboardingCreatedAt &&
+      !isVendorGracePeriodExpired(existingProfile.vendorOnboardingCreatedAt)
+    ) {
+      redirectTo = '/vendor/onboarding';
+    } else if (existingProfile.role === 'VENDOR' && existingProfile.vendorApprovalStatus === 'APPROVED') {
+      redirectTo = '/dashboard/seller';
+    } else {
+      redirectTo = '/dashboard/buyer';
+    }
 
     // Password signup doesn't require verification
     return jsonWithCookies(
@@ -182,7 +281,10 @@ export async function POST(request: NextRequest) {
       pendingCookies
     );
   } catch (error) {
-    console.error('POST /api/auth/password error:', error);
+    console.error('POST /api/auth/password error:', {
+      traceId,
+      error,
+    });
     return jsonWithCookies({ error: 'Failed to authenticate' }, 500, pendingCookies);
   }
 }

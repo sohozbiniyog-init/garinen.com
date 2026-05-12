@@ -13,6 +13,7 @@ type SyncUserProfileInput = {
   role: UserRole;
   adminTier?: AdminTier | null;
   vendorApprovalStatus?: VendorApprovalStatus | null;
+  vendorOnboardingCreatedAt?: Date | null;
 };
 
 export async function syncUserProfile(input: SyncUserProfileInput) {
@@ -31,6 +32,7 @@ export async function syncUserProfile(input: SyncUserProfileInput) {
     role: input.role,
     adminTier: input.adminTier || undefined,
     vendorApprovalStatus: input.vendorApprovalStatus || undefined,
+    vendorOnboardingCreatedAt: input.vendorOnboardingCreatedAt || undefined,
   };
 
   const upsertProfile = (includePhone: boolean) =>
@@ -43,6 +45,7 @@ export async function syncUserProfile(input: SyncUserProfileInput) {
         role: profileData.role,
         adminTier: profileData.adminTier,
         vendorApprovalStatus: profileData.vendorApprovalStatus,
+        vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt,
       },
       update: {
         name: profileData.name,
@@ -50,6 +53,7 @@ export async function syncUserProfile(input: SyncUserProfileInput) {
         role: profileData.role,
         adminTier: profileData.adminTier,
         vendorApprovalStatus: profileData.vendorApprovalStatus,
+        ...(profileData.vendorOnboardingCreatedAt ? { vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt } : {}),
       },
       select: {
         id: true,
@@ -59,6 +63,7 @@ export async function syncUserProfile(input: SyncUserProfileInput) {
         role: true,
         adminTier: true,
         vendorApprovalStatus: true,
+        vendorOnboardingCreatedAt: true,
       },
     });
 

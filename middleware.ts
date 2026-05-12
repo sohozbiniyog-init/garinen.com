@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { getCustomClaimsFromSupabaseJwt } from './lib/auth/jwt-claims';
+import { isPendingVendorWithinGracePeriod } from './lib/auth/vendor-grace-period';
 
 /**
  * Edge-safe middleware for route protection
@@ -45,6 +46,7 @@ export async function middleware(request: NextRequest) {
   let userRole: string | null = null;
   let adminTier: string | null = null;
   let vendorApprovalStatus: string | null = null;
+  let vendorOnboardingCreatedAt: string | null = null;
 
   if (user) {
     try {
@@ -56,6 +58,7 @@ export async function middleware(request: NextRequest) {
         userRole = claims.role;
         adminTier = claims.admin_tier;
         vendorApprovalStatus = claims.vendor_approval_status;
+        vendorOnboardingCreatedAt = claims.vendor_onboarding_created_at;
       }
     } catch (err) {
       console.warn('Failed to verify JWT claims:', err);
@@ -63,6 +66,7 @@ export async function middleware(request: NextRequest) {
       userRole = null;
       adminTier = null;
       vendorApprovalStatus = null;
+      vendorOnboardingCreatedAt = null;
     }
   }
 
@@ -122,8 +126,14 @@ export async function middleware(request: NextRequest) {
 
   // Protect vendor onboarding/submitted routes
   if (pathname.startsWith('/vendor/onboarding') || pathname.startsWith('/vendor/submitted')) {
-    if (!userRole || userRole !== 'VENDOR') {
+    if (!user) {
       return redirectTo('/login');
+    }
+
+    const canAccessVendorOnboarding = isPendingVendorWithinGracePeriod(vendorApprovalStatus, vendorOnboardingCreatedAt);
+
+    if (!canAccessVendorOnboarding) {
+      return redirectTo('/dashboard/buyer');
     }
   }
 
