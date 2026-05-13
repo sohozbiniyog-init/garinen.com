@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
           role: true,
           adminTier: true,
           vendorApprovalStatus: true,
+          vendorInfo: true,
           vendorOnboardingCreatedAt: true,
           profession: true,
         },
@@ -55,12 +56,12 @@ export async function GET(request: NextRequest) {
         {
           user,
           profile,
-          claims: {
-            role: profile.role || 'BUYER',
-            admin_tier: profile.adminTier || null,
-            vendor_approval_status: profile.vendorApprovalStatus || null,
-            vendor_onboarding_created_at: profile.vendorOnboardingCreatedAt ? profile.vendorOnboardingCreatedAt.toISOString() : null,
-          },
+            claims: {
+              role: profile.role || 'BUYER',
+              admin_tier: profile.adminTier || null,
+              vendor_approval_status: profile.vendorApprovalStatus || null,
+              vendor_onboarding_created_at: profile.vendorOnboardingCreatedAt ? (profile.vendorOnboardingCreatedAt as unknown as Date).toISOString() : null,
+            },
         },
         { status: 200 }
       )

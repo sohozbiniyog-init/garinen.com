@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ShopProfileFormProps {
-  shopName: string;
-  onUpdate: (data: ShopProfileData) => void;
+  profile: ShopProfileData;
+  onPhoneUpdate: (phone: string) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -15,41 +15,45 @@ export interface ShopProfileData {
   city: string;
 }
 
-export function ShopProfileForm({ shopName: initialShopName, onUpdate, isLoading }: ShopProfileFormProps) {
-  const [formData, setFormData] = useState<ShopProfileData>({
-    shopName: initialShopName,
-    phone: '',
-    address: '',
-    city: ''
-  });
+export function ShopProfileForm({ profile, onPhoneUpdate, isLoading }: ShopProfileFormProps) {
+  const [phone, setPhone] = useState(profile.phone);
+  const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  useEffect(() => {
+    setPhone(profile.phone);
+  }, [profile.phone]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdate(formData);
+    setError('');
+    setSuccess('');
+    setIsUpdatingPhone(true);
+
+    try {
+      await onPhoneUpdate(phone);
+      setSuccess('Phone number updated successfully');
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Failed to update phone number');
+    } finally {
+      setIsUpdatingPhone(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card-strong space-y-6 rounded-[2rem] p-8 shadow-strong">
+    <form onSubmit={handlePhoneSubmit} className="glass-card-strong space-y-6 rounded-[2rem] p-8 shadow-strong">
       <div>
         <label htmlFor="shopName" className="block text-sm font-semibold text-slate-700">Shop Name</label>
         <input
           id="shopName"
           type="text"
-          name="shopName"
-          value={formData.shopName}
-          onChange={handleChange}
+          value={profile.shopName}
+          disabled
           autoComplete="organization"
-          className="glass-field mt-2 w-full rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-moss"
-          required
+          className="glass-field mt-2 w-full rounded-lg px-4 py-3 text-sm opacity-80 focus:outline-none"
         />
+        <p className="mt-2 text-xs text-slate-500">Shop profile data is read-only here.</p>
       </div>
 
       <div>
@@ -58,8 +62,8 @@ export function ShopProfileForm({ shopName: initialShopName, onUpdate, isLoading
           id="phone"
           type="tel"
           name="phone"
-          value={formData.phone}
-          onChange={handleChange}
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
           autoComplete="tel"
           inputMode="tel"
           placeholder="+880 17…"
@@ -74,13 +78,11 @@ export function ShopProfileForm({ shopName: initialShopName, onUpdate, isLoading
           <input
             id="address"
             type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
+            value={profile.address}
+            disabled
             autoComplete="street-address"
             placeholder="ABM Tower, Gulshan…"
-            className="glass-field mt-2 w-full rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-moss"
-            required
+            className="glass-field mt-2 w-full rounded-lg px-4 py-3 text-sm opacity-80 focus:outline-none"
           />
         </div>
         <div>
@@ -88,24 +90,25 @@ export function ShopProfileForm({ shopName: initialShopName, onUpdate, isLoading
           <input
             id="city"
             type="text"
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
+            value={profile.city}
+            disabled
             autoComplete="address-level2"
             placeholder="Dhaka…"
-            className="glass-field mt-2 w-full rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-moss"
-            required
+            className="glass-field mt-2 w-full rounded-lg px-4 py-3 text-sm opacity-80 focus:outline-none"
           />
         </div>
       </div>
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || isUpdatingPhone}
         className="glass-button w-full rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] disabled:opacity-50"
       >
-        {isLoading ? 'Updating…' : 'Update Shop Profile'}
+        {isLoading || isUpdatingPhone ? 'Updating…' : 'Update Phone Number'}
       </button>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {success && <p className="text-sm text-moss">{success}</p>}
     </form>
   );
 }

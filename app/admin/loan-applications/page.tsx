@@ -71,7 +71,7 @@ export default function AdminLoanApplicationsPage() {
     <main className="min-h-screen w-full px-6 py-10 lg:px-10">
       <section className="mb-8">
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Admin</p>
-        <h1 className="mt-3 text-4xl font-bold text-white">Loan Applications</h1>
+        <h1 className="mt-3 text-4xl font-bold text-white">Financing Applications</h1>
         <p className="mt-3 text-sm leading-7 text-slate-300">
           Review buyer drafts, confirm in-person documents, and move applications to submitted for bank officers.
         </p>
@@ -85,20 +85,20 @@ export default function AdminLoanApplicationsPage() {
 
       <div className="grid gap-6">
         {loading ? (
-          <section className="glass-card rounded-[2rem] p-8 text-center text-sm text-slate-600 shadow-soft">
-            Loading loan applications...
+          <section className="glass-card rounded-[2rem] p-8 text-center text-sm text-white shadow-soft">
+            Loading  Financing applications...
           </section>
         ) : loans.length === 0 ? (
-          <section className="glass-card rounded-[2rem] p-8 text-center text-sm text-slate-600 shadow-soft">
-            No loan applications found.
+          <section className="glass-card rounded-[2rem] p-8 text-center text-sm text-white shadow-soft">
+            No  Financing applications found.
           </section>
         ) : (
           loans.map((loan) => (
             <section key={loan.id} className="glass-card rounded-[2rem] p-6 shadow-soft">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-bold text-ink">{loan.name}</h2>
-                  <p className="mt-1 text-sm text-smoke">{loan.email}{loan.phone ? ` • ${loan.phone}` : ''}</p>
+                  <h2 className="text-2xl font-bold text-white">{loan.name}</h2>
+                  <p className="mt-1 text-sm text-white">{loan.email}{loan.phone ? ` • ${loan.phone}` : ''}</p>
                 </div>
                 <div className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-white">
                   Reference: {loan.id}
@@ -107,25 +107,25 @@ export default function AdminLoanApplicationsPage() {
 
               <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Status</p>
+                  <p className="text-xs uppercase tracking-[0.12em] text-white">Status</p>
                   <p className="mt-2 font-semibold">{loan.status}</p>
                 </div>
                 <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Loan Amount</p>
+                  <p className="text-xs uppercase tracking-[0.12em] text-white">Financing Amount</p>
                   <p className="mt-2 font-semibold">{getLoanAmount(loan.application, loan.amount)}</p>
                 </div>
                 <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Bank</p>
+                  <p className="text-xs uppercase tracking-[0.12em] text-white">Bank</p>
                   <p className="mt-2 font-semibold">{getBankName(loan.application)}</p>
                 </div>
                 <div className="rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Vehicle</p>
+                  <p className="text-xs uppercase tracking-[0.12em] text-white">Vehicle</p>
                   <p className="mt-2 font-semibold">{getVehicleName(loan.application)}</p>
                 </div>
               </div>
 
               <div className="mt-4 rounded-2xl border border-white/30 bg-white/70 p-4 text-sm text-ink">
-                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Submission Details</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-white">Submission Details</p>
                 <div className="mt-3 grid gap-2 text-sm text-smoke md:grid-cols-2">
                   <div>Submitted: <strong className="text-ink">{loan.submittedAt ? new Date(loan.submittedAt).toLocaleString() : 'Not yet submitted'}</strong></div>
                   <div>Created: <strong className="text-ink">{new Date(loan.createdAt).toLocaleString()}</strong></div>

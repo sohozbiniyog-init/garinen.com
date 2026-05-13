@@ -14,22 +14,22 @@ export function VendorTOSModal({ isOpen, onAccept, onDecline }: VendorTOSModalPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-black/10 bg-white/95 p-8 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 md:p-6">
+      <div className="max-h-[85vh] w-full max-w-xl sm:max-w-2xl lg:max-w-4xl overflow-y-auto rounded-[2rem] border border-black/10 bg-white/95 p-6 sm:p-8 md:p-10 shadow-lg">
         {/* Header */}
-        <h1 className="mb-6 text-center text-3xl font-bold text-ink">
+        <h1 className="mb-4 sm:mb-6 text-2xl sm:text-3xl md:text-4xl font-bold text-ink text-center">
           ভেন্ডর চুক্তি এবং শর্তাবলী
         </h1>
-        <p className="mb-8 text-center text-sm text-smoke">
+        <p className="mb-6 sm:mb-8 text-center text-xs sm:text-sm md:text-base text-smoke">
           অনুগ্রহ করে সাবধানে পড়ুন। ভেন্ডর হিসাবে নিবন্ধন করার জন্য সমস্ত শর্তাবলী সম্মতি বাধ্যতামূলক।
         </p>
 
         {/* Content */}
-        <div className="space-y-6 text-sm text-ink">
+        <div className="space-y-4 sm:space-y-6 text-xs sm:text-sm md:text-base text-ink">
           {/* Section 1 */}
           <div>
-            <h2 className="mb-3 font-bold text-ink">১. ভেন্ডর দায়িত্ব এবং বাধ্যবাধকতা</h2>
-            <ul className="list-inside space-y-2 list-disc ml-2">
+            <h2 className="mb-2 sm:mb-3 font-bold text-ink text-sm sm:text-base md:text-lg">১. ভেন্ডর দায়িত্ব এবং বাধ্যবাধকতা</h2>
+            <ul className="list-inside space-y-1 sm:space-y-2 list-disc ml-2">
               <li><span className="font-semibold">সত্যতা:</span> আপনি গ্যারান্টি দেন যে আপনার সমস্ত তথ্য সঠিক, সম্পূর্ণ এবং বর্তমান।</li>
               <li><span className="font-semibold">গাড়ির বিবরণ:</span> সমস্ত তালিকাভুক্ত গাড়ি সঠিক অবস্থার সাথে তালিকাভুক্ত করতে হবে।</li>
               <li><span className="font-semibold">আইনি সম্মতি:</span> আপনি সমস্ত স্থানীয় এবং জাতীয় আইনকানুন মেনে চলবেন।</li>
@@ -39,8 +39,8 @@ export function VendorTOSModal({ isOpen, onAccept, onDecline }: VendorTOSModalPr
 
           {/* Section 2 */}
           <div>
-            <h2 className="mb-3 font-bold text-ink">২. পণ্য এবং সেবার মান</h2>
-            <ul className="list-inside space-y-2 list-disc ml-2">
+            <h2 className="mb-2 sm:mb-3 font-bold text-ink text-sm sm:text-base md:text-lg">২. পণ্য এবং সেবার মান</h2>
+            <ul className="list-inside space-y-1 sm:space-y-2 list-disc ml-2">
               <li><span className="font-semibold">গাড়ি পরিদর্শন:</span> ক্রেতারা ক্রয়ের আগে গাড়ি পরিদর্শন করার অধিকার রাখেন।</li>
               <li><span className="font-semibold">স্বচ্ছতা:</span> সকল ত্রুটি এবং সমস্যা সম্পর্কে স্বচ্ছ যোগাযোগ করতে হবে।</li>
               <li><span className="font-semibold">ওয়ারেন্টি:</span> প্রদানকৃত যেকোনো ওয়ারেন্টি সম্পূর্ণভাবে সম্মান করতে হবে।</li>
@@ -49,8 +49,8 @@ export function VendorTOSModal({ isOpen, onAccept, onDecline }: VendorTOSModalPr
 
           {/* Section 3 */}
           <div>
-            <h2 className="mb-3 font-bold text-ink">৩. পেমেন্ট এবং লেনদেন</h2>
-            <ul className="list-inside space-y-2 list-disc ml-2">
+            <h2 className="mb-2 sm:mb-3 font-bold text-ink text-sm sm:text-base md:text-lg">৩. পেমেন্ট এবং লেনদেন</h2>
+            <ul className="list-inside space-y-1 sm:space-y-2 list-disc ml-2">
               <li><span className="font-semibold">কমিশন:</span> সফল বিক্রয়ের উপর গুরি অটোমোবাইলস প্রযোজ্য কমিশন নেবে।</li>
               <li><span className="font-semibold">মূল্য নির্ধারণ:</span> সমস্ত মূল্য স্পষ্ট এবং লুকানো চার্জ মুক্ত হতে হবে।</li>
               <li><span className="font-semibold">লেনদেন নিরাপত্তা:</span> সমস্ত পেমেন্ট প্ল্যাটফর্ম নিরাপত্তা মান অনুসরণ করবে।</li>
@@ -59,8 +59,8 @@ export function VendorTOSModal({ isOpen, onAccept, onDecline }: VendorTOSModalPr
 
           {/* Section 4 */}
           <div>
-            <h2 className="mb-3 font-bold text-ink">৪. বিষয়বস্তু এবং ছবি</h2>
-            <ul className="list-inside space-y-2 list-disc ml-2">
+            <h2 className="mb-2 sm:mb-3 font-bold text-ink text-sm sm:text-base md:text-lg">৪. বিষয়বস্তু এবং ছবি</h2>
+            <ul className="list-inside space-y-1 sm:space-y-2 list-disc ml-2">
               <li><span className="font-semibold">মালিকানা:</span> আপনি গ্যারান্টি দেন যে আপনি আপলোড করা সমস্ত ছবি এবং বিবরণের মালিক।</li>
               <li><span className="font-semibold">লাইসেন্স:</span> আপনি গুরি অটোমোবাইলসকে প্ল্যাটফর্মে বিষয়বস্তু ব্যবহার করার অনুমতি দেন।</li>
               <li><span className="font-semibold">প্রতিবন্ধী বিষয়বস্তু:</span> কোনো অপমানজনক বা অবৈধ বিষয়বস্তু অনুমোদিত নয়।</li>
@@ -69,8 +69,8 @@ export function VendorTOSModal({ isOpen, onAccept, onDecline }: VendorTOSModalPr
 
           {/* Section 5 */}
           <div>
-            <h2 className="mb-3 font-bold text-ink">৫. দায়িত্ব সীমাবদ্ধতা</h2>
-            <ul className="list-inside space-y-2 list-disc ml-2">
+            <h2 className="mb-2 sm:mb-3 font-bold text-ink text-sm sm:text-base md:text-lg">৫. দায়িত্ব সীমাবদ্ধতা</h2>
+            <ul className="list-inside space-y-1 sm:space-y-2 list-disc ml-2">
               <li><span className="font-semibold">কোন দায়িত্ব নেই:</span> গুরি অটোমোবাইলস ক্রেতা এবং বিক্রেতার মধ্যে সরাসরি লেনদেনের জন্য দায়বদ্ধ নয়।</li>
               <li><span className="font-semibold">বিরোধ নিষ্পত্তি:</span> যেকোনো বিরোধ পক্ষগুলির মধ্যে সমাধান করা হবে।</li>
             </ul>

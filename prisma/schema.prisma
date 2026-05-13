@@ -11,6 +11,7 @@ datasource db {
 enum Role {
   BUYER
   VENDOR
+  PENDING_VENDOR
   ADMIN
 }
 
@@ -19,6 +20,12 @@ enum ListingStatus {
   APPROVED
   REJECTED
   SOLD
+}
+
+enum VehicleCondition {
+  NEW
+  USED
+  RECONDITIONED
 }
 
 enum BookingStatus {
@@ -139,6 +146,7 @@ model Listing {
   model      String
   year       Int
   price      Decimal       @db.Decimal(12, 2)
+  condition  VehicleCondition @default(NEW)
   mileage    Int?
   location   String
   imageUrls  Json?

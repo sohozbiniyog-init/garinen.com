@@ -198,16 +198,16 @@ export default function VendorOnboardingForm() {
         {!gracePeriodExpired && (
           <>
             <div className="mb-8 max-w-2xl">
-              <p className="text-sm uppercase tracking-[0.2em] text-glass-muted">ভেন্ডর অনবোর্ডিং</p>
-              <h1 className="mt-2 text-3xl font-semibold text-glass-primary sm:text-4xl">আপনার ব্যবসায়িক তথ্য পূরণ করুন</h1>
-              <p className="mt-4 text-sm leading-6 text-glass-secondary">
+              <p className="text-sm uppercase tracking-[0.2em] text-slate-500">ভেন্ডর অনবোর্ডিং</p>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-900 sm:text-4xl">আপনার ব্যবসায়িক তথ্য পূরণ করুন</h1>
+              <p className="mt-4 text-sm leading-6 text-slate-600">
                 বিভাগ, ঠিকানা, এবং ব্যবসার ধরন দিন। আমরা শুধুমাত্র আপনার জমা দেওয়া তথ্যই সংরক্ষণ করব।
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="shopName" className="block text-sm font-semibold text-slate-900">
+            <label htmlFor="shopName" className="block text-sm font-semibold text-slate-700">
               দোকানের নাম <span className="text-red-500">*</span>
             </label>
             <input
@@ -223,7 +223,7 @@ export default function VendorOnboardingForm() {
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-semibold text-slate-900">
+            <label htmlFor="category" className="block text-sm font-semibold text-slate-700">
               ব্যবসায়িক বিভাগ <span className="text-red-500">*</span>
             </label>
             <select
@@ -244,7 +244,7 @@ export default function VendorOnboardingForm() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-semibold text-slate-900">
+            <label htmlFor="description" className="block text-sm font-semibold text-slate-700">
               ব্যবসার বর্ণনা <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -257,12 +257,12 @@ export default function VendorOnboardingForm() {
               className="glass-field mt-2 w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-moss"
               required
             />
-            <p className="mt-2 text-xs text-glass-muted">{description.length} / ৫০০ অক্ষর</p>
+            <p className="mt-2 text-xs text-slate-500">{description.length} / ৫০০ অক্ষর</p>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
-              <label htmlFor="locationDivision" className="block text-sm font-semibold text-slate-900">
+              <label htmlFor="locationDivision" className="block text-sm font-semibold text-slate-700">
                 প্রধান অবস্থান - বিভাগ <span className="text-red-500">*</span>
               </label>
               <select
@@ -283,7 +283,7 @@ export default function VendorOnboardingForm() {
             </div>
 
             <div>
-              <label htmlFor="locationAddress" className="block text-sm font-semibold text-slate-900">
+              <label htmlFor="locationAddress" className="block text-sm font-semibold text-slate-700">
                 বিস্তারিত ঠিকানা <span className="text-red-500">*</span>
               </label>
               <input
@@ -300,7 +300,7 @@ export default function VendorOnboardingForm() {
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-semibold text-slate-900">
+            <label htmlFor="phone" className="block text-sm font-semibold text-slate-700">
               যোগাযোগ নম্বর <span className="text-red-500">*</span>
             </label>
             <input
@@ -328,14 +328,14 @@ export default function VendorOnboardingForm() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="rounded-full border border-white/10 px-6 py-3 font-semibold text-glass-primary hover:bg-white/10 transition-colors sm:w-auto"
+              className="rounded-full border border-slate-300 bg-white/80 px-6 py-3 font-semibold text-slate-900 transition-colors hover:bg-white sm:w-auto"
             >
               ফিরে যান
             </button>
           </div>
         </form>
 
-            <p className="mt-8 text-center text-xs text-glass-muted">
+            <p className="mt-8 text-center text-xs text-slate-500">
               আপনার তথ্য সুরক্ষিত এবং শুধুমাত্র প্রশাসক দলের দ্বারা দেখা হবে।
             </p>
           </>

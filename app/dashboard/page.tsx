@@ -34,20 +34,23 @@ export default async function DashboardPage() {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
 
+  let claims: Record<string, unknown> | undefined = undefined;
   if (token) {
     try {
       const payload = await verifySupabaseAccessToken(token);
-      const claims = payload?.app_metadata?.custom_claims;
-      const userRole = claims?.role as string | undefined;
-
-      if (userRole === 'ADMIN') return redirect('/admin');
-      if (userRole === 'VENDOR') return redirect('/dashboard/seller');
-      if (userRole === 'BUYER') return redirect('/dashboard/buyer');
+      claims = payload?.app_metadata?.custom_claims;
     } catch (err) {
-      // verification failed - fall through to login
+      // verification failed; log and allow fallback below
       console.warn('Token verification failed in dashboard page:', err);
+      claims = undefined;
     }
   }
 
-  redirect('/login');
+  const userRole = claims?.role as string | undefined;
+  if (userRole === 'ADMIN') return redirect('/admin');
+  if (userRole === 'VENDOR') return redirect('/dashboard/seller');
+  if (userRole === 'BUYER') return redirect('/dashboard/buyer');
+
+  // If we have an authenticated user but no trusted role claim, send to pending dashboard
+  return redirect('/dashboard/pending');
 }

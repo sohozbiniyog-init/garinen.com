@@ -105,7 +105,20 @@ export async function middleware(request: NextRequest) {
 
   // Protect dashboard routes
   if (pathname.startsWith('/dashboard')) {
+    // Allow direct access to the pending dashboard for authenticated users
+    if (pathname.startsWith('/dashboard/pending')) {
+      if (user) {
+        return NextResponse.next({ request });
+      }
+      return redirectTo('/login');
+    }
+    // If the user is authenticated but JWT claims are not yet available
+    // (token race / delayed custom claims), send them to a pending dashboard
+    // which will perform DB-backed checks and show onboarding CTA.
     if (!userRole) {
+      if (user) {
+        return redirectTo('/dashboard/pending');
+      }
       return redirectTo('/login');
     }
 
@@ -117,6 +130,13 @@ export async function middleware(request: NextRequest) {
     // Vendors can access /dashboard/seller
     if (pathname.startsWith('/dashboard/seller') && userRole !== 'VENDOR') {
       return redirectTo('/dashboard');
+    }
+  }
+
+  // Allow an authenticated user to access the pending vendor dashboard
+  if (pathname.startsWith('/dashboard/pending')) {
+    if (!user) {
+      return redirectTo('/login');
     }
   }
 

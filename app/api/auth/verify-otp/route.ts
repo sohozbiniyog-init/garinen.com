@@ -104,14 +104,14 @@ export async function POST(req: NextRequest) {
 
     const desiredRoleFromMetadata = authUser.user_metadata?.signup_role === 'VENDOR' ? 'VENDOR' : 'BUYER';
     const pendingVendorWithinGracePeriod = isPendingVendorWithinGracePeriod(
-      existing?.vendorApprovalStatus,
+      existing?.role ?? existing?.vendorApprovalStatus,
       existing?.vendorOnboardingCreatedAt
     );
 
     const role = existing?.role === 'ADMIN'
       ? 'ADMIN'
       : pendingVendorWithinGracePeriod
-        ? 'BUYER'
+        ? 'PENDING_VENDOR'
         : existing?.vendorApprovalStatus === 'APPROVED'
           ? existing?.role ?? 'BUYER'
           : mode === 'signup'
@@ -160,15 +160,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const redirectTo =
-      profile.role === 'ADMIN'
-        ? '/admin'
-        : profile.vendorApprovalStatus === 'PENDING' && profile.vendorOnboardingCreatedAt && isPendingVendorWithinGracePeriod(profile.vendorApprovalStatus, profile.vendorOnboardingCreatedAt)
-            ? '/vendor/onboarding'
-            : profile.role === 'VENDOR'
-              ? '/dashboard/seller'
-              : '/dashboard/buyer'
-          : '/dashboard';
+    let redirectTo = '/dashboard';
+    if (profile.role === 'ADMIN') {
+      redirectTo = '/admin';
+    } else if (isPendingVendorWithinGracePeriod(profile.role ?? profile.vendorApprovalStatus, profile.vendorOnboardingCreatedAt)) {
+      redirectTo = '/vendor/onboarding';
+    } else if (profile.role === 'VENDOR') {
+      redirectTo = '/dashboard/seller';
+    } else {
+      redirectTo = '/dashboard/buyer';
+    }
 
     return jsonWithCookies({
       success: true,

@@ -1,72 +1,103 @@
 'use client';
 
-import { CreateListingForm, ListingFormData } from '@/components/forms/CreateListing';
-import { SellerListingCard } from '@/components/listings/SellerCard';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { showToast } from '@/components/common/Toast';
 
-interface Listing {
+interface VendorListing {
   id: string;
   title: string;
   brand: string;
   model: string;
   year: number;
   price: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SOLD';
+  condition: 'NEW' | 'USED' | 'RECONDITIONED';
+  mileage: number | null;
+  location: string;
+  status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'SOLD';
+  adminNotes: string | null;
+  hasActiveBooking: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
-const mockListings: Listing[] = [
-  {
-    id: '1',
-    title: 'Toyota Corolla 2022 - Excellent Condition',
-    brand: 'Toyota',
-    model: 'Corolla',
-    year: 2022,
-    price: '2,500,000',
-    status: 'APPROVED',
-    createdAt: 'Apr 28'
-  },
-  {
-    id: '2',
-    title: 'Honda Civic 2020 - Well Maintained',
-    brand: 'Honda',
-    model: 'Civic',
-    year: 2020,
-    price: '2,200,000',
-    status: 'PENDING',
-    createdAt: 'May 1'
-  }
-];
+const STATUS_COLORS: Record<string, string> = {
+  DRAFT: 'bg-gray-100 text-gray-800',
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  APPROVED: 'bg-green-100 text-green-800',
+  REJECTED: 'bg-red-100 text-red-800',
+  SOLD: 'bg-blue-100 text-blue-800',
+};
 
 export default function SellerListingsPage() {
-  const [listings, setListings] = useState<Listing[]>(mockListings);
-  const [showForm, setShowForm] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
+  const router = useRouter();
+  const [listings, setListings] = useState<VendorListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
 
-  const handleCreateListing = (data: ListingFormData) => {
-    const newListing: Listing = {
-      id: String(Date.now()),
-      title: data.title,
-      brand: data.brand,
-      model: data.model,
-      year: data.year,
-      price: data.price,
-      status: 'PENDING',
-      createdAt: 'Just now'
+  useEffect(() => {
+    const checkAccessAndFetchListings = async () => {
+      try {
+        // Check access
+        const meRes = await fetch('/api/auth/me');
+        if (!meRes.ok) {
+          router.push('/login');
+          return;
+        }
+
+        const meData = await meRes.json();
+        const role = meData?.claims?.role;
+        const vendorStatus = meData?.profile?.vendorApprovalStatus;
+
+        if (role !== 'VENDOR' || vendorStatus !== 'APPROVED') {
+          showToast('Only approved vendors can view listings', { type: 'error' });
+          router.push('/dashboard');
+          return;
+        }
+
+        setHasAccess(true);
+
+        // Fetch listings
+        const listingsRes = await fetch('/api/vendor/listings');
+        if (listingsRes.ok) {
+          const data = await listingsRes.json();
+          setListings(data.listings || []);
+        }
+      } catch (error) {
+        console.error('Failed to load listings:', error);
+        showToast('Failed to load listings', { type: 'error' });
+      } finally {
+        setLoading(false);
+      }
     };
-    setListings((current) => [newListing, ...current]);
-    setShowForm(false);
-    setStatusMessage('Listing created. It will appear on the marketplace after admin approval.');
-  };
 
-  const handleEdit = (id: string) => {
-    setStatusMessage(`Editing listing ${id} will be available next.`);
-  };
+    checkAccessAndFetchListings();
+  }, [router]);
 
-  const handleDelete = (id: string) => {
-    setListings((current) => current.filter((l) => l.id !== id));
-    setStatusMessage('Listing deleted.');
-  };
+  if (loading) {
+    return (
+      <main className="min-h-screen w-full px-6 py-10 lg:px-10">
+        <section className="mb-10">
+          <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Vendor Tools</p>
+          <h1 className="mt-3 text-4xl font-bold text-white">My Listings</h1>
+        </section>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-400">Loading listings...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!hasAccess) {
+    return null;
+  }
+
+  const approvedCount = listings.filter((l) => l.status === 'APPROVED').length;
+  const pendingCount = listings.filter((l) => l.status === 'PENDING').length;
 
   return (
     <main className="min-h-screen w-full px-6 py-10 lg:px-10">
@@ -74,59 +105,103 @@ export default function SellerListingsPage() {
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Vendor Tools</p>
         <h1 className="mt-3 text-4xl font-bold text-white">My Listings</h1>
         <p className="mt-3 text-sm leading-7 text-slate-300">
-          Manage your car listings. New listings are pending admin approval before appearing on the marketplace. Images and videos are added by admin only.
+          Manage your vehicle listings. New listings are pending admin approval before appearing on the marketplace.
         </p>
       </section>
 
-      <div className="mb-10 flex items-center gap-4">
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="glass-button rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.01]"
-        >
-          {showForm ? 'Cancel' : '+ New Listing'}
-        </button>
+      <div className="mb-10 flex items-center gap-4 flex-wrap">
+        <Link href="/dashboard/seller/listings/new">
+          <button className="glass-button rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.01]">
+            + New Listing
+          </button>
+        </Link>
         <span className="text-sm text-smoke">
-          {listings.length} listing{listings.length !== 1 ? 's' : ''} • {listings.filter((l) => l.status === 'APPROVED').length} approved
+          {listings.length} listing{listings.length !== 1 ? 's' : ''} • {approvedCount} approved • {pendingCount} pending
         </span>
       </div>
 
       <div className="mb-6 rounded-2xl border border-sky-200/40 bg-sky-50/70 px-4 py-3 text-sm text-slate-700">
-        Seller listings do not support image or video uploads. Media is managed by admins after moderation.
+        New listings will be reviewed by our admin team. You can edit draft and pending listings until they are approved.
       </div>
-
-      {statusMessage && (
-        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-950" role="status" aria-live="polite">
-          {statusMessage}
-        </div>
-      )}
-
-      {showForm && (
-        <div className="mb-10">
-          <CreateListingForm onSubmit={handleCreateListing} />
-        </div>
-      )}
 
       {listings.length === 0 ? (
         <div className="glass-card rounded-[2rem] p-12 text-center shadow-soft">
           <p className="text-lg font-semibold text-ink">No listings yet</p>
           <p className="mt-2 text-sm text-smoke">Create your first listing to get started.</p>
+          <Link href="/dashboard/seller/listings/new">
+            <button className="mt-6 glass-button rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.01]">
+              Create Listing
+            </button>
+          </Link>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-4">
           {listings.map((listing) => (
-            <SellerListingCard
+            <div
               key={listing.id}
-              id={listing.id}
-              title={listing.title}
-              brand={listing.brand}
-              model={listing.model}
-              year={listing.year}
-              price={listing.price}
-              status={listing.status}
-              createdAt={listing.createdAt}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
+              className="glass-card rounded-[1.5rem] p-6 border border-white/20 hover:border-white/40 transition-all"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-white">{listing.title}</h3>
+                  <p className="text-sm text-slate-300">
+                    {listing.brand} {listing.model} • {listing.year}
+                  </p>
+                </div>
+                <div className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[listing.status]}`}>
+                  {listing.status}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm py-3 border-y border-white/10">
+                <div>
+                  <p className="text-slate-400">Price</p>
+                  <p className="font-semibold text-white">৳ {parseFloat(listing.price).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Condition</p>
+                  <p className="font-semibold text-white capitalize">{listing.condition.toLowerCase()}</p>
+                </div>
+                {listing.condition !== 'NEW' && (
+                  <div>
+                    <p className="text-slate-400">Mileage</p>
+                    <p className="font-semibold text-white">{listing.mileage?.toLocaleString()} km</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-slate-400">Location</p>
+                  <p className="font-semibold text-white">{listing.location}</p>
+                </div>
+              </div>
+
+              {listing.adminNotes && listing.status !== 'APPROVED' && (
+                <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-sm text-yellow-200">
+                  <p className="font-medium mb-1">Admin Notes:</p>
+                  <p>{listing.adminNotes}</p>
+                </div>
+              )}
+
+              {listing.hasActiveBooking && (
+                <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg text-sm text-blue-200">
+                  ℹ️ This listing has active bookings
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4">
+                <Link href={`/dashboard/seller/listings/${listing.id}`}>
+                  <button className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition">
+                    View Details
+                  </button>
+                </Link>
+                {!listing.hasActiveBooking && (
+                  <Link href={`/dashboard/seller/listings/${listing.id}/edit`}>
+                    <button className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition">
+                      Edit
+                    </button>
+                  </Link>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}

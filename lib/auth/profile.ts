@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/db/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, User, Role } from '@prisma/client';
 import { normalizeBangladeshPhone } from '@/lib/auth/phone';
 
-export type UserRole = 'BUYER' | 'VENDOR' | 'ADMIN';
+export type UserRole = Role;
 export type AdminTier = 'SUPER_ADMIN' | 'VENDOR_ADMIN' | 'BASIC_ADMIN';
 export type VendorApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -16,7 +16,7 @@ type SyncUserProfileInput = {
   vendorOnboardingCreatedAt?: Date | null;
 };
 
-export async function syncUserProfile(input: SyncUserProfileInput) {
+export async function syncUserProfile(input: SyncUserProfileInput): Promise<User> {
   const email = input.email?.trim().toLowerCase() || null;
 
   if (!email) {
@@ -42,29 +42,20 @@ export async function syncUserProfile(input: SyncUserProfileInput) {
         email,
         name: profileData.name,
         ...(includePhone && phone ? { phone } : {}),
-        role: profileData.role,
+        role: profileData.role as Role,
         adminTier: profileData.adminTier,
         vendorApprovalStatus: profileData.vendorApprovalStatus,
-        vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt,
+        vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt as Date | null,
       },
       update: {
         name: profileData.name,
         ...(includePhone && phone ? { phone } : {}),
-        role: profileData.role,
+        role: profileData.role as Role,
         adminTier: profileData.adminTier,
         vendorApprovalStatus: profileData.vendorApprovalStatus,
-        ...(profileData.vendorOnboardingCreatedAt ? { vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt } : {}),
+        ...(profileData.vendorOnboardingCreatedAt ? { vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt as Date | null } : {}),
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-        role: true,
-        adminTier: true,
-        vendorApprovalStatus: true,
-        vendorOnboardingCreatedAt: true,
-      },
+      // return full user record
     });
 
   try {
@@ -75,7 +66,7 @@ export async function syncUserProfile(input: SyncUserProfileInput) {
       const targets = Array.isArray(target) ? target.map(String) : typeof target === 'string' ? [target] : [];
 
       if (targets.includes('phone')) {
-        return upsertProfile(false);
+        return await upsertProfile(false);
       }
     }
 

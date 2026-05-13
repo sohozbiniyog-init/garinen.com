@@ -88,22 +88,22 @@ export default function EmiCalculator({ carPrice: initialPrice = 3000000 }: Prop
             onChange={(e) => setCarPrice(+e.target.value)}
             className="w-full"
           />
-          <div className="mt-2 flex gap-2 text-[11px]">
+          <div className="mt-2 flex gap-2 text-[11px] text-black">
             <button
               onClick={() => setCarPrice(1500000)}
-              className="rounded-full border border-black/10 px-2.5 py-1 hover:bg-sand"
+              className="rounded-full border border-black/10 px-2.5 py-1 hover:bg-brand-red/10"
             >
               15L
             </button>
             <button
               onClick={() => setCarPrice(2500000)}
-              className="rounded-full border border-black/10 px-2.5 py-1 hover:bg-sand"
+              className="rounded-full border border-black/10 px-2.5 py-1 hover:bg-brand-red/10"
             >
               25L
             </button>
             <button
               onClick={() => setCarPrice(5000000)}
-              className="rounded-full border border-black/10 px-2.5 py-1 hover:bg-sand"
+              className="rounded-full border border-black/10 px-2.5 py-1 hover:bg-brand-red/10"
             >
               50L
             </button>

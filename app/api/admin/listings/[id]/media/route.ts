@@ -33,11 +33,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const listing = await prisma.listing.findUnique({
       where: { id },
-      select: { imageUrls: true, videoUrls: true },
+      select: { imageUrls: true, videoUrls: true, status: true },
     });
 
     if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+    }
+
+    // File uploads only allowed when listing is in PENDING status
+    if (files.length > 0 && listing.status !== 'PENDING') {
+      return NextResponse.json(
+        { error: 'File uploads only allowed for listings in PENDING approval state. Use URL updates to modify approved listings.' },
+        { status: 403 }
+      );
     }
 
     const uploadedImageUrls: string[] = [];
@@ -50,7 +58,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       });
 
       if (uploadResult.error) {
-        throw new Error(uploadResult.error.message);
+        const errorMsg = uploadResult.error.message || 'Unknown upload error';
+        if (errorMsg.includes('Bucket not found') || errorMsg.includes('not found')) {
+          throw new Error(
+            'Photo storage bucket not initialized. Call POST /api/admin/setup/buckets first.'
+          );
+        }
+        throw new Error(errorMsg);
       }
 
       const {
@@ -84,5 +98,53 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     console.error('Error uploading listing media:', error);
     return NextResponse.json({ error: 'Failed to upload listing media' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getSessionFromRequest(request);
+    if (!session || session.userRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { imageUrls, videoUrls } = body;
+
+    const listing = await prisma.listing.findUnique({
+      where: { id },
+      select: { imageUrls: true, videoUrls: true },
+    });
+
+    if (!listing) {
+      return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+    }
+
+    // Allow URL updates regardless of listing status
+    const updatedListing = await prisma.listing.update({
+      where: { id },
+      data: {
+        imageUrls: imageUrls ? imageUrls : toStringArray(listing.imageUrls),
+        videoUrls: videoUrls ? videoUrls : toStringArray(listing.videoUrls),
+      },
+      select: {
+        id: true,
+        imageUrls: true,
+        videoUrls: true,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        id: updatedListing.id,
+        imageUrls: toStringArray(updatedListing.imageUrls),
+        videoUrls: toStringArray(updatedListing.videoUrls),
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error updating listing URLs:', error);
+    return NextResponse.json({ error: 'Failed to update listing URLs' }, { status: 500 });
   }
 }

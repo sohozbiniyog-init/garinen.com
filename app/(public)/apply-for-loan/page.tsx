@@ -183,8 +183,12 @@ export default function ApplyForLoanPage() {
     <main className="min-h-screen w-full px-6 py-10 lg:px-10">
       <section className="mb-10">
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Financing</p>
-        <h1 className="mt-3 text-4xl font-bold text-white">Apply for Car Loan</h1>
+        <h1 className="mt-3 text-4xl font-bold text-white">Apply for Financing</h1>
         <p className="mt-3 text-sm leading-7 text-slate-300">
+          Disclaimer:
+        </p>
+        <p className="mt-3 text-sm leading-7 text-slate-300">
+          We are not a bank or financial institution. We do not provide loans directly. All financing options displayed are facilitated through licensed banks and financial institutions in Bangladesh. Loan approval, interest rates, and terms are solely determined by the respective financing partner.
           Share your details here and we&apos;ll help place a loan application with a partner bank. Loan officers review the financial documents you provide and contact you after their assessment, while we continue to support buyers browsing vehicles from across Bangladesh.
         </p>
       </section>
@@ -238,7 +242,12 @@ export default function ApplyForLoanPage() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Application Submitted!</h2>
           <p className="mt-3 text-sm text-slate-600">
-            Your loan application has been submitted successfully. We&apos;ll review your application and contact you within 24 hours.
+            Your Financing application has been submitted successfully. We&apos;ll review your application and contact you within 24 hours.
+          </p>
+          <p className="mt-3 text-bold text-black">
+            Garinen.com acts solely as a facilitator and service provider connecting customers with third-party licensed banks and non-bank financial institutions (NBFIs) in Bangladesh.
+            We do not issue, underwrite, or approve any loans. All loan approvals, interest rates, processing fees, repayment terms, and conditions are determined exclusively by the respective financial institution, subject to their internal policies and Bangladesh Bank regulations.
+            By applying through our platform, you acknowledge that your information may be shared with these partner institutions for the purpose of financing evaluation. garinen.com shall not be held liable for any decisions made by the financial institutions.
           </p>
           <p className="mt-3 text-sm font-semibold text-moss">
             Reference ID: {referenceId || 'PENDING'}

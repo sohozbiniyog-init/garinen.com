@@ -1,19 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { createSupabaseRouteClient } from '@/lib/auth/route-helpers';
+import type { PendingCookie } from '@/lib/auth/route-helpers';
 
 export async function POST(req: NextRequest) {
   const traceId = req.headers.get('x-trace-id') || crypto.randomUUID();
 
   try {
     const body = await req.json();
-    const { identifier, shopName, description, locationDivision, locationAddress, phone, category } = body;
+    let identifier: string | undefined = body.identifier;
+    const { shopName, description, locationDivision, locationAddress, phone, category } = body;
+
+    // If identifier not provided, attempt to get authenticated user's email from Supabase session
+    if (!identifier) {
+      try {
+        const pendingCookies: PendingCookie[] = [];
+        const supabase = createSupabaseRouteClient(req, pendingCookies);
+        const { data } = await supabase.auth.getUser();
+        const authUser = data.user ?? null;
+        if (authUser?.email) {
+          identifier = authUser.email;
+        }
+      } catch (err) {
+        // ignore and proceed; identifier may still be empty
+      }
+    }
 
     const normalizedCategory = typeof category === 'string' ? category.trim().toLowerCase() : '';
     const allowedCategories = new Set(['new', 'used', 'reconditioned']);
 
     console.info('vendor-submit-info-request', {
       traceId,
-      identifier,
+      identifier: identifier || null,
       hasShopName: Boolean(shopName),
       hasDescription: Boolean(description),
       hasLocationDivision: Boolean(locationDivision),
@@ -63,8 +81,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Allow pending vendor signups to complete onboarding before the role upgrade.
-    const isPendingVendor = user.role === 'BUYER' && user.vendorApprovalStatus === 'PENDING';
+    // Allow pending vendor signups (new `PENDING_VENDOR` role) to complete onboarding before the role upgrade.
+    const roleStr = String(user.role);
+    const isPendingVendor = roleStr === 'PENDING_VENDOR' || (roleStr === 'BUYER' && user.vendorApprovalStatus === 'PENDING');
 
     if (user.role !== 'VENDOR' && !isPendingVendor) {
       console.warn('vendor-submit-info-non-vendor-user', {

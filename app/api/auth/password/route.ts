@@ -6,6 +6,7 @@ import { verifyAdminCredentials } from '@/lib/auth/admin-db';
 import { syncUserProfile } from '@/lib/auth/profile';
 import { normalizeBangladeshPhone } from '@/lib/auth/phone';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
+import type { Role } from '@prisma/client';
 import { isPendingVendorWithinGracePeriod, isVendorGracePeriodExpired } from '@/lib/auth/vendor-grace-period';
 
 type AuthMode = 'signin' | 'signup';
@@ -156,7 +157,8 @@ export async function POST(request: NextRequest) {
     });
 
     const pendingVendorWithinGracePeriod = isPendingVendorWithinGracePeriod(
-      currentProfile?.vendorApprovalStatus,
+      // helper accepts either vendorApprovalStatus ('PENDING') or role ('PENDING_VENDOR')
+      currentProfile?.role ?? currentProfile?.vendorApprovalStatus,
       currentProfile?.vendorOnboardingCreatedAt
     );
 
@@ -175,25 +177,28 @@ export async function POST(request: NextRequest) {
 
     const isApprovedVendor = currentProfile?.role === 'VENDOR' && currentProfile?.vendorApprovalStatus === 'APPROVED';
 
-    const inferredRole = adminBootstrap
-      ? 'ADMIN'
-      : mode === 'signin' && pendingVendorWithinGracePeriod
-        ? 'BUYER'
-        : isApprovedVendor
-          ? 'VENDOR'
-          : 'BUYER';
+    let inferredRole: Role;
+    if (adminBootstrap) {
+      inferredRole = 'ADMIN';
+    } else if (mode === 'signup' && isVendor) {
+      inferredRole = 'PENDING_VENDOR';
+    } else if (mode === 'signin' && pendingVendorWithinGracePeriod) {
+      inferredRole = 'PENDING_VENDOR';
+    } else if (isApprovedVendor) {
+      inferredRole = 'VENDOR';
+    } else {
+      inferredRole = 'BUYER';
+    }
 
     const vendorApprovalStatus = adminBootstrap
       ? currentProfile?.vendorApprovalStatus ?? undefined
       : mode === 'signup' && isVendor
-        ? 'PENDING' // Vendor signups stay PENDING until admin approves
-        : mode === 'signin'
-          ? pendingVendorWithinGracePeriod
-            ? 'PENDING'
-            : isApprovedVendor
-              ? currentProfile.vendorApprovalStatus ?? undefined
-              : undefined
-          : currentProfile?.vendorApprovalStatus ?? undefined;
+        ? 'PENDING'
+        : mode === 'signin' && pendingVendorWithinGracePeriod
+          ? 'PENDING'
+          : isApprovedVendor
+            ? currentProfile?.vendorApprovalStatus ?? undefined
+            : undefined;
 
     const vendorOnboardingCreatedAt = mode === 'signup' && isVendor
       ? new Date()
@@ -251,15 +256,15 @@ export async function POST(request: NextRequest) {
     let redirectTo: string;
 
     if (mode === 'signup') {
-      redirectTo = isVendor ? '/vendor/onboarding' : '/dashboard/buyer';
-    } else if (adminBootstrap || existingProfile.role === 'ADMIN') {
-      redirectTo = '/admin';
-    } else if (
-      existingProfile.vendorApprovalStatus === 'PENDING' &&
-      existingProfile.vendorOnboardingCreatedAt &&
-      !isVendorGracePeriodExpired(existingProfile.vendorOnboardingCreatedAt)
-    ) {
-      redirectTo = '/vendor/onboarding';
+        redirectTo = isVendor ? '/vendor/onboarding' : '/dashboard/buyer';
+      } else if (adminBootstrap || existingProfile.role === 'ADMIN') {
+        redirectTo = '/admin';
+      } else if (
+        existingProfile.vendorApprovalStatus === 'PENDING' &&
+        existingProfile.vendorOnboardingCreatedAt &&
+        !isVendorGracePeriodExpired(existingProfile.vendorOnboardingCreatedAt)
+      ) {
+        redirectTo = '/vendor/onboarding';
     } else if (existingProfile.role === 'VENDOR' && existingProfile.vendorApprovalStatus === 'APPROVED') {
       redirectTo = '/dashboard/seller';
     } else {

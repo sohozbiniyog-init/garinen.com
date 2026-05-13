@@ -8,6 +8,7 @@ import { createBrowserClient } from '@supabase/ssr';
 export function SiteHeader() {
   const [auth, setAuth] = useState<'guest' | 'buyer' | 'vendor' | 'admin'>('guest');
   const [isLoading, setIsLoading] = useState(true);
+  const [hasSubmittedVendorInfo, setHasSubmittedVendorInfo] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -34,9 +35,30 @@ export function SiteHeader() {
           return;
         }
 
-        // Ask the server for verified claims (server fetches from database)
+        // Ask the server for verified profile & claims (database-backed)
         try {
-          const res = await fetch('/api/auth/me');
+          const cacheKey = 'gn_auth_profile_v1';
+          const cached = typeof window !== 'undefined' ? sessionStorage.getItem(cacheKey) : null;
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached);
+              const age = Date.now() - (parsed.__ts || 0);
+              if (age < 60_000 && parsed.profile) {
+                const role = parsed.profile.role || parsed.claims?.role || 'BUYER';
+                const vendorApproval = parsed.profile.vendorApprovalStatus || parsed.claims?.vendor_approval_status;
+                setHasSubmittedVendorInfo(Boolean(parsed.profile.vendorInfo));
+                if (role === 'ADMIN' && parsed.profile.adminTier) setAuth('admin');
+                else if (role === 'VENDOR' && vendorApproval === 'APPROVED') setAuth('vendor');
+                else setAuth('buyer');
+                setIsLoading(false);
+                return;
+              }
+            } catch (e) {
+              // fallthrough to fresh request
+            }
+          }
+
+          const res = await fetch('/api/auth/me', { cache: 'no-store' });
           if (!res.ok) {
             setAuth('guest');
             setIsLoading(false);
@@ -44,15 +66,28 @@ export function SiteHeader() {
           }
 
           const json = await res.json();
-          const role = json?.claims?.role || 'BUYER';
-          const adminTier = json?.claims?.admin_tier;
+          const profile = json?.profile || null;
+          const claims = json?.claims || null;
+          const role = profile?.role || claims?.role || 'BUYER';
+          const adminTier = profile?.adminTier || claims?.admin_tier;
+          const vendorApproval = profile?.vendorApprovalStatus || claims?.vendor_approval_status;
 
-          // Determine auth type based on role and admin tier
+          // Cache lightweight profile for short time to reduce flicker
+          try {
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem(cacheKey, JSON.stringify({ __ts: Date.now(), profile, claims }));
+            }
+          } catch (e) {
+            /* ignore */
+          }
+
+          setHasSubmittedVendorInfo(Boolean(profile?.vendorInfo));
           if (role === 'ADMIN' && adminTier) {
             setAuth('admin');
-          } else if (role === 'VENDOR') {
+          } else if (role === 'VENDOR' && vendorApproval === 'APPROVED') {
             setAuth('vendor');
           } else {
+            // treat pending vendors as buyers in header navigation
             setAuth('buyer');
           }
         } catch (err) {
@@ -157,7 +192,7 @@ export function SiteHeader() {
             className="group relative inline-flex min-w-[164px] items-center justify-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-r from-brand-red via-brand-red-deep to-brand-red px-6 py-3 text-sm font-semibold tracking-[0.16em] text-white shadow-lg shadow-brand-red/20 transition-transform duration-300 hover:scale-[1.03] active:scale-95"
           >
             <span className="relative z-10 flex items-center gap-2 uppercase">
-              Apply for Loan
+              Apply for Financing
               <span className="text-base transition-transform group-hover:translate-x-0.5">→</span>
             </span>
           </Link>
@@ -190,6 +225,7 @@ export function SiteHeader() {
                   <Link href={accountHref} className="block rounded-xl px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10">
                     {accountLabel}
                   </Link>
+                  {/* vendor submitted indicator removed from global header to avoid persistent label */}
                   <button
                     type="button"
                     onClick={handleLogout}

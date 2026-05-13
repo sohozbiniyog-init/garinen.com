@@ -39,7 +39,7 @@ function LoginContent() {
           const role = json?.profile?.role || json?.claims?.role || 'BUYER';
           const vendorApprovalStatus = json?.profile?.vendorApprovalStatus || json?.claims?.vendor_approval_status || null;
           const vendorOnboardingCreatedAt = json?.profile?.vendorOnboardingCreatedAt || json?.claims?.vendor_onboarding_created_at || null;
-          const isPendingVendor = isPendingVendorWithinGracePeriod(vendorApprovalStatus, vendorOnboardingCreatedAt);
+          const isPendingVendor = isPendingVendorWithinGracePeriod(role || vendorApprovalStatus, vendorOnboardingCreatedAt);
           const target = (window as Window & { __loginRedirectPath?: string }).__loginRedirectPath || redirectPath;
 
           if (role === 'ADMIN') {

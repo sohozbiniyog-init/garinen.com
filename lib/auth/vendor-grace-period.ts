@@ -65,12 +65,14 @@ export function getGracePeriodStatus(vendorOnboardingCreatedAt: Date | null | un
 }
 
   export function isPendingVendorWithinGracePeriod(
-    vendorApprovalStatus: string | null | undefined,
-    vendorOnboardingCreatedAt: Date | string | null | undefined
+      roleOrVendorApproval: string | null | undefined,
+      vendorOnboardingCreatedAt: Date | string | null | undefined
   ): boolean {
-    if (vendorApprovalStatus !== 'PENDING' || !vendorOnboardingCreatedAt) {
-      return false;
-    }
+      // Accept either the vendorApprovalStatus ('PENDING') or the role 'PENDING_VENDOR'
+      const isPending = roleOrVendorApproval === 'PENDING' || roleOrVendorApproval === 'PENDING_VENDOR';
+      if (!isPending || !vendorOnboardingCreatedAt) {
+        return false;
+      }
 
     const createdAt = vendorOnboardingCreatedAt instanceof Date
       ? vendorOnboardingCreatedAt

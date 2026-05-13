@@ -38,11 +38,29 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // VENDOR_ADMIN: fetch PENDING vendors only (optimized)
-    // SUPER_ADMIN: fetch all vendors
-    const whereClause: Prisma.UserWhereInput = adminTier === 'SUPER_ADMIN'
-      ? { role: 'VENDOR' }
-      : { role: 'VENDOR', vendorApprovalStatus: 'PENDING' };
+    // Build where clause to include new `PENDING_VENDOR` role and any users
+    // with `vendorApprovalStatus: 'PENDING'` so submitted onboarding is visible
+    // to admins even if role upgrade hasn't happened yet.
+    let whereClause: Prisma.UserWhereInput;
+
+    if (adminTier === 'SUPER_ADMIN') {
+      // SUPER_ADMIN sees all vendor-related records
+      whereClause = {
+        OR: [
+          { role: 'VENDOR' },
+          { role: 'PENDING_VENDOR' },
+          { vendorApprovalStatus: 'PENDING' },
+        ],
+      };
+    } else {
+      // VENDOR_ADMIN and BASIC_ADMIN should primarily see pending vendor applications
+      whereClause = {
+        OR: [
+          { role: 'PENDING_VENDOR' },
+          { vendorApprovalStatus: 'PENDING' },
+        ],
+      };
+    }
 
     // Fetch pending vendors
     const vendors = await prisma.user.findMany({
@@ -54,16 +72,25 @@ export async function GET(req: NextRequest) {
         name: true,
         vendorInfo: true,
         vendorApprovalStatus: true,
+        vendorOnboardingCreatedAt: true,
+        createdAt: true,
       },
       orderBy: {
+        // Prefer onboarding timestamp when available; fallback handled in mapping below
         createdAt: 'asc',
       },
     });
 
     return NextResponse.json({
       vendors: vendors.map((v) => ({
-        ...v,
+        id: v.id,
+        email: v.email,
+        phone: v.phone,
+        name: v.name,
         vendorInfo: v.vendorInfo || {},
+        vendorApprovalStatus: v.vendorApprovalStatus,
+        // Use vendorOnboardingCreatedAt when present, otherwise fall back to createdAt
+        createdAt: v.vendorOnboardingCreatedAt ? v.vendorOnboardingCreatedAt.toISOString() : v.createdAt.toISOString(),
       })),
     });
   } catch (err) {
