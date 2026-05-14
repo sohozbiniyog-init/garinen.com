@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthCard } from '@/components/auth/Card';
@@ -66,7 +67,10 @@ function LoginContent() {
     <main suppressHydrationWarning className="mx-auto flex min-h-[100dvh] max-w-md items-center px-6 py-12">
       <Suspense fallback={<div className="h-64 w-full rounded-[2rem] border border-black/10 bg-white/85 p-8 shadow-soft" />}>
         {isMounted ? (
-          <AuthCard initialNotice="" />
+          <div className="space-y-4">
+            <AuthCard initialNotice="" />
+           
+          </div>
         ) : (
           <div className="h-64 w-full rounded-[2rem] border border-black/10 bg-white/85 p-8 shadow-soft" />
         )}

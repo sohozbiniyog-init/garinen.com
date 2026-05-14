@@ -60,19 +60,14 @@ export async function getAdminTier(
   email: string
 ): Promise<'SUPER_ADMIN' | 'VENDOR_ADMIN' | 'BASIC_ADMIN' | null> {
   try {
-    const user = await prisma.user.findUnique({
+    // Prefer AdminAccount as the source-of-truth for admin tier
+    const admin = await prisma.adminAccount.findUnique({
       where: { email: email.toLowerCase() },
-      select: {
-        role: true,
-        adminTier: true
-      }
+      select: { tier: true },
     });
 
-    if (!user || user.role !== 'ADMIN' || !user.adminTier) {
-      return null;
-    }
-
-    return user.adminTier;
+    if (!admin || !admin.tier) return null;
+    return admin.tier;
   } catch (error) {
     console.error('Error getting admin tier:', error);
     return null;

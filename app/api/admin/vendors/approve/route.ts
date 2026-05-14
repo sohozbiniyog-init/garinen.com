@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { verifySupabaseAccessToken } from '@/lib/auth/verify-token';
 import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
@@ -124,9 +124,11 @@ export async function POST(request: NextRequest) {
       });
 
       // Use shopName from vendorInfo if available, otherwise fall back to user name
-      const shopName = fullUser?.vendorInfo && typeof fullUser.vendorInfo === 'object'
-        ? (fullUser.vendorInfo as any).shopName || user.name
-        : user.name;
+      const vendorInfo = fullUser?.vendorInfo && typeof fullUser.vendorInfo === 'object'
+        ? (fullUser.vendorInfo as { shopName?: string | null })
+        : null;
+
+      const shopName = vendorInfo?.shopName || user.name;
 
       await prisma.shop.upsert({
         where: { ownerId: userId },

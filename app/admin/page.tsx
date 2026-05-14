@@ -77,12 +77,6 @@ export default async function AdminPage() {
       allowed: adminTier === 'SUPER_ADMIN',
     },
     {
-      title: 'Users & Roles',
-      description: 'Review users, promote vendors, and manage access levels.',
-      href: '/admin/users',
-      allowed: adminTier === 'SUPER_ADMIN',
-    },
-    {
       title: 'Listings',
       description: 'Moderate public listings and keep marketplace inventory current.',
       href: '/admin/listings',
@@ -110,8 +104,8 @@ export default async function AdminPage() {
           <div>
             <h1 className="text-4xl font-semibold text-white">Admin dashboard</h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
-              Use this hub to reach every admin workspace. Super admins get the full management set,
-              while other admin tiers keep access to the operations they are allowed to handle.
+              Use this hub to reach every admin workspace. Super admins get admin management,
+              while vendor admins share access to the operational workspaces they are allowed to handle.
             </p>
           </div>
           <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-300">

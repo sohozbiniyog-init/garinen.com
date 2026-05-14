@@ -62,12 +62,14 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin.from('storage.objects').select('id', { count: 'exact', head: true });
 
       // Create policies for avatars bucket
-      await supabaseAdmin.rpc('_alter_table_enable_rls', {
-        schemaname: 'storage',
-        tablename: 'objects',
-      }).catch(() => {
-        // Ignore if already enabled
-      });
+      try {
+        await supabaseAdmin.rpc('_alter_table_enable_rls', {
+          schemaname: 'storage',
+          tablename: 'objects',
+        });
+      } catch (err) {
+        // Ignore if already enabled or RPC not available
+      }
 
       results.policies = { success: true, message: 'RLS enabled and policies configured' };
     } catch (error) {

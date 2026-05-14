@@ -7,6 +7,8 @@ export interface AuthSession {
   userId: string;
   email: string;
   userRole: 'BUYER' | 'VENDOR' | 'ADMIN';
+  // Optional admin tier when the session belongs to an admin
+  adminTier?: 'SUPER_ADMIN' | 'VENDOR_ADMIN' | 'BASIC_ADMIN' | null;
   shopId?: string;
 }
 
@@ -76,10 +78,22 @@ export async function getSessionFromRequest(req: NextRequest): Promise<AuthSessi
       return null;
     }
 
+    let adminTier: 'SUPER_ADMIN' | 'VENDOR_ADMIN' | 'BASIC_ADMIN' | null = null;
+    try {
+      if (user.role === 'ADMIN') {
+        const admin = await prisma.adminAccount.findUnique({ where: { email: user.email }, select: { tier: true } });
+        adminTier = admin?.tier ?? null;
+      }
+    } catch (err) {
+      // Non-fatal: return session without adminTier
+      adminTier = null;
+    }
+
     return {
       userId: user.id,
       email: user.email,
       userRole: user.role as 'BUYER' | 'VENDOR' | 'ADMIN',
+      adminTier,
       shopId: user.ownedShop?.id,
     };
   } catch (error) {

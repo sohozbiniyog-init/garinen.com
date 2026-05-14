@@ -303,6 +303,8 @@ model AdminAccount {
   email         String   @unique
   name          String
   phone         String?
+  // Optional link to Supabase Auth user id for mapping JWT sessions to AdminAccount
+  supabaseAuthId String?  @unique
   passwordHash  String
   tier          AdminTier
   createdBy     String?

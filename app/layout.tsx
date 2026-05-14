@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Fascinate, Fira_Code, Noto_Sans, Geist } from 'next/font/google';
 import { BankRatesProvider } from '@/lib/contexts/bank-rates';
 import { FeaturedProvider } from '@/lib/contexts/featured';
-import { SiteFooter } from '@/components/common/Footer';
+import { ConditionalFooter } from '@/components/common/ConditionalFooter';
 import './globals.css';
 import { cn } from "@/lib/utils/common";
 
@@ -44,7 +44,7 @@ export default function RootLayout({
             <div className="flex-1">
               {children}
             </div>
-            <SiteFooter />
+            <ConditionalFooter />
           </FeaturedProvider>
         </BankRatesProvider>
       </body>

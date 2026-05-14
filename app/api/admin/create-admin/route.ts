@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
+import { logAdminAction } from '@/lib/admin-activity';
 
 export async function POST(request: NextRequest) {
   const pendingCookies: PendingCookie[] = [];
@@ -87,6 +88,21 @@ export async function POST(request: NextRequest) {
         createdAt: true,
       },
     });
+
+    // Log admin creation
+    try {
+      await logAdminAction({
+        actorEmail: currentAdminEmail ?? null,
+        action: 'CREATE',
+        entityType: 'AdminAccount',
+        entityId: newAdmin.id,
+        after: JSON.parse(JSON.stringify(newAdmin)),
+        ipAddress: request.headers.get('x-forwarded-for') || null,
+        userAgent: request.headers.get('user-agent') || null,
+      });
+    } catch (err) {
+      // non-fatal
+    }
 
     // Create user in Supabase Auth
     if (supabaseAdmin) {

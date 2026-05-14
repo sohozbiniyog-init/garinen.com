@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseRouteClient } from '@/lib/auth/route-helpers'
 import type { PendingCookie } from '@/lib/auth/route-helpers'
+import { getCustomClaimsFromSupabaseJwt } from '@/lib/auth/jwt-claims'
 import { prisma } from '@/lib/db/prisma'
 
 export async function GET(request: NextRequest) {
@@ -13,6 +14,36 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ user: null, claims: null }, { status: 200 })
+    }
+
+    // Get JWT custom claims (contains role, admin_tier for admins)
+    let jwtClaims = {
+      role: null as string | null,
+      admin_tier: null as string | null,
+      vendor_approval_status: null as string | null,
+      vendor_onboarding_created_at: null as string | null,
+    }
+
+    try {
+      const sessionData = await supabase.auth.getSession()
+      const token = sessionData.data.session?.access_token
+      if (token) {
+        jwtClaims = await getCustomClaimsFromSupabaseJwt(token)
+      }
+    } catch (err) {
+      console.warn('Failed to extract JWT claims:', err)
+    }
+
+    // If user is admin (from JWT), return JWT claims (admin_tier is set during admin login)
+    if (jwtClaims.role === 'ADMIN') {
+      return NextResponse.json(
+        {
+          user,
+          profile: null,
+          claims: jwtClaims,
+        },
+        { status: 200 }
+      )
     }
 
     try {

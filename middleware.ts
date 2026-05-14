@@ -80,6 +80,11 @@ export async function middleware(request: NextRequest) {
 
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
+    // Allow the public admin login page to render without auth.
+    if (pathname === '/admin/login') {
+      return response;
+    }
+
     if (!userRole || userRole !== 'ADMIN') {
       return redirectTo('/login');
     }

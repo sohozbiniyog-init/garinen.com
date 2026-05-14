@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { showToast } from '@/components/common/Toast';
-
+import type { AuditLog } from '@prisma/client';
 interface AdminAccount {
   id: string;
   email: string;
@@ -20,6 +20,7 @@ export default function AdminManagementPage() {
   const [admins, setAdmins] = useState<AdminAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [logs, setLogs] = useState<AuditLog[] | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -78,6 +79,55 @@ export default function AdminManagementPage() {
       console.error('Failed to fetch admins:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLogs = async () => {
+    try {
+      const res = await fetch('/api/admin/admin-actions');
+      if (!res.ok) throw new Error('Failed to fetch logs');
+      const data = await res.json();
+      setLogs(data.logs || []);
+    } catch (err) {
+      console.error('Failed to fetch logs', err);
+      setLogs([]);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this admin?')) return;
+    try {
+      const res = await fetch('/api/admin/delete-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      showToast('Deleted', { type: 'success' });
+      await fetchAdmins();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete', { type: 'error' });
+    }
+  };
+
+  const handleUpdate = async (admin: AdminAccount) => {
+    const newName = prompt('New name', admin.name) || admin.name;
+    const newTier = prompt('Tier (SUPER_ADMIN|VENDOR_ADMIN|BASIC_ADMIN)', admin.tier) || admin.tier;
+    try {
+      const res = await fetch('/api/admin/update-admin', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: admin.id, name: newName, tier: newTier }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      showToast('Updated', { type: 'success' });
+      await fetchAdmins();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update', { type: 'error' });
     }
   };
 
@@ -169,167 +219,66 @@ export default function AdminManagementPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold text-white">Admin Management (SUPER_ADMIN)</h1>
+
+      {/* Create form (minimal) */}
       <div>
-        <h1 className="text-3xl font-semibold text-white">Admin Management</h1>
-        <p className="mt-2 text-sm text-slate-300">Create new admin accounts (SUPER_ADMIN and VENDOR_ADMIN)</p>
-      </div>
-
-      {/* Create Admin Form */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h2 className="mb-4 text-xl font-semibold text-white">Create New Admin Account</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-white">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="admin@ghuri.local"
-                className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-400 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-white">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Admin Name"
-                className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-400 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-white">
-                Phone (optional)
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="+880 1X XXX XX XX"
-                className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-400 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="tier" className="block text-sm font-semibold text-white">
-                Admin Tier
-              </label>
-              <select
-                id="tier"
-                name="tier"
-                value={formData.tier}
-                onChange={handleInputChange}
-                className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
-              >
-                <option value="VENDOR_ADMIN" className="bg-slate-800">VENDOR_ADMIN (vendor approval)</option>
-                <option value="SUPER_ADMIN" className="bg-slate-800">SUPER_ADMIN (create admins)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-white">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="At least 8 characters"
-                className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-400 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-white">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="Repeat password"
-                className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-400 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
-              />
-            </div>
-          </div>
-
-          {formError && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3">
-              <p className="text-sm text-red-200">{formError}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={creating}
-            className="w-full rounded-lg bg-moss px-6 py-3 font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {creating ? 'Creating...' : 'Create Admin Account'}
-          </button>
+        <h2 className="font-semibold text-white">Create Admin</h2>
+        <form onSubmit={handleSubmit} className="space-y-2 max-w-md">
+          <input name="email" value={formData.email} onChange={handleInputChange} placeholder="email" className="w-full rounded p-2 bg-white/5" />
+          <input name="name" value={formData.name} onChange={handleInputChange} placeholder="name" className="w-full rounded p-2 bg-white/5" />
+          <input name="phone" value={formData.phone} onChange={handleInputChange} placeholder="phone" className="w-full rounded p-2 bg-white/5" />
+          <input name="password" value={formData.password} onChange={handleInputChange} type="password" placeholder="password" className="w-full rounded p-2 bg-white/5" />
+          <input name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} type="password" placeholder="confirm" className="w-full rounded p-2 bg-white/5" />
+          <select name="tier" value={formData.tier} onChange={handleInputChange} className="w-full rounded p-2 bg-white/5">
+            <option value="VENDOR_ADMIN">VENDOR_ADMIN</option>
+            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+          </select>
+          {formError && <div className="text-rose-400">{formError}</div>}
+          <button disabled={creating} className="px-4 py-2 rounded bg-moss">{creating ? 'Creating...' : 'Create'}</button>
         </form>
       </div>
 
-      {/* Admin List */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h2 className="mb-4 text-xl font-semibold text-white">Existing Admin Accounts</h2>
-
+      {/* Admin list */}
+      <div>
+        <h2 className="font-semibold text-white">Admins</h2>
         {loading ? (
-          <div className="animate-pulse space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-12 rounded bg-white/5" />
-            ))}
-          </div>
-        ) : admins.length === 0 ? (
-          <p className="text-sm text-slate-300">No admin accounts created yet</p>
+          <div>Loading...</div>
         ) : (
-          <div className="space-y-2">
-            {admins.map(admin => (
-              <div key={admin.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 p-4">
-                <div>
-                  <p className="font-semibold text-white">{admin.name}</p>
-                  <p className="text-xs text-slate-400">{admin.email}</p>
-                  {admin.phone && <p className="text-xs text-slate-400">{admin.phone}</p>}
-                </div>
-                <div className="text-right">
-                  <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                    admin.tier === 'SUPER_ADMIN' 
-                      ? 'bg-brand-red/20 text-brand-red'
-                      : 'bg-moss/20 text-moss'
-                  }`}>
-                    {admin.tier}
-                  </span>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {new Date(admin.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-slate-300"><th>Email</th><th>Name</th><th>Tier</th><th>Created</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {admins.map(a => (
+                <tr key={a.id} className="border-t border-white/5">
+                  <td className="py-2">{a.email}</td>
+                  <td>{a.name}</td>
+                  <td>{a.tier}</td>
+                  <td>{new Date(a.createdAt).toLocaleString()}</td>
+                  <td>
+                    <button onClick={() => handleUpdate(a)} className="mr-2 underline">Edit</button>
+                    <button onClick={() => handleDelete(a.id)} className="underline text-rose-400">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
+
+      <div>
+        <button onClick={fetchAdmins} className="underline mr-2">Refresh</button>
+        <button onClick={fetchLogs} className="underline">View Activity Log</button>
+      </div>
+
+      {logs && (
+        <div>
+          <h3 className="font-semibold">Activity Log</h3>
+          <pre className="max-h-64 overflow-auto whitespace-pre-wrap bg-white/5 p-3 text-xs">{JSON.stringify(logs, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }

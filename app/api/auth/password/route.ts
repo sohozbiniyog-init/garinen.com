@@ -1,8 +1,6 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { verifyAdminCredentials } from '@/lib/auth/admin-db';
 import { syncUserProfile } from '@/lib/auth/profile';
 import { normalizeBangladeshPhone } from '@/lib/auth/phone';
 import { createSupabaseRouteClient, jsonWithCookies, PendingCookie } from '@/lib/auth/route-helpers';
@@ -52,34 +50,20 @@ export async function POST(request: NextRequest) {
 
     const supabase = createSupabaseRouteClient(request, pendingCookies);
 
-    let authEmail = email;
-    let adminBootstrap: { tier: 'SUPER_ADMIN' | 'VENDOR_ADMIN' | 'BASIC_ADMIN'; name: string; email: string; phone?: string } | null = null;
+    const existingAdminAccount = await prisma.adminAccount.findUnique({
+      where: { email },
+      select: { id: true },
+    });
 
-    if (mode === 'signin' && password) {
-      // Verify admin credentials against the database
-      const verifiedAdmin = await verifyAdminCredentials(email, password);
-      if (verifiedAdmin) {
-        adminBootstrap = {
-          tier: verifiedAdmin.tier,
-          name: verifiedAdmin.name,
-          email: verifiedAdmin.email
-        };
-        authEmail = verifiedAdmin.email;
-
-        if (supabaseAdmin) {
-          // Ensure admin user exists in Supabase Auth
-          await supabaseAdmin.auth.admin.createUser({
-            email: verifiedAdmin.email,
-            password,
-            email_confirm: true,
-            user_metadata: { 
-              full_name: verifiedAdmin.name,
-              admin_tier: verifiedAdmin.tier
-            },
-          }).catch(() => null);
-        }
-      }
+    if (mode === 'signin' && existingAdminAccount) {
+      return jsonWithCookies(
+        { error: 'Admin accounts must sign in at /admin/login' },
+        403,
+        pendingCookies
+      );
     }
+
+    const authEmail = email;
 
     // Password-based signup (no OTP or email confirmation in the normal prod path)
     const authResult =
@@ -178,9 +162,7 @@ export async function POST(request: NextRequest) {
     const isApprovedVendor = currentProfile?.role === 'VENDOR' && currentProfile?.vendorApprovalStatus === 'APPROVED';
 
     let inferredRole: Role;
-    if (adminBootstrap) {
-      inferredRole = 'ADMIN';
-    } else if (mode === 'signup' && isVendor) {
+    if (mode === 'signup' && isVendor) {
       inferredRole = 'PENDING_VENDOR';
     } else if (mode === 'signin' && pendingVendorWithinGracePeriod) {
       inferredRole = 'PENDING_VENDOR';
@@ -190,28 +172,26 @@ export async function POST(request: NextRequest) {
       inferredRole = 'BUYER';
     }
 
-    const vendorApprovalStatus = adminBootstrap
-      ? currentProfile?.vendorApprovalStatus ?? undefined
-      : mode === 'signup' && isVendor
+    const vendorApprovalStatus = mode === 'signup' && isVendor
+      ? 'PENDING'
+      : mode === 'signin' && pendingVendorWithinGracePeriod
         ? 'PENDING'
-        : mode === 'signin' && pendingVendorWithinGracePeriod
-          ? 'PENDING'
-          : isApprovedVendor
-            ? currentProfile?.vendorApprovalStatus ?? undefined
-            : undefined;
+        : isApprovedVendor
+          ? currentProfile?.vendorApprovalStatus ?? undefined
+          : undefined;
 
     const vendorOnboardingCreatedAt = mode === 'signup' && isVendor
       ? new Date()
       : currentProfile?.vendorOnboardingCreatedAt ?? undefined;
 
-    const profilePhone = adminBootstrap?.phone || normalizedPhone || (authUser.user_metadata?.phone as string | undefined);
+    const profilePhone = normalizedPhone || (authUser.user_metadata?.phone as string | undefined);
 
     const existingProfile = await syncUserProfile({
       email: authUser.email ?? authEmail,
-      name: adminBootstrap?.name || name || authUser.user_metadata?.full_name || authUser.email || authEmail,
+      name: name || authUser.user_metadata?.full_name || authUser.email || authEmail,
       phone: profilePhone,
       role: inferredRole,
-      adminTier: adminBootstrap?.tier ?? currentProfile?.adminTier ?? undefined,
+      adminTier: currentProfile?.adminTier ?? undefined,
       vendorApprovalStatus,
       vendorOnboardingCreatedAt,
     });
@@ -257,8 +237,6 @@ export async function POST(request: NextRequest) {
 
     if (mode === 'signup') {
         redirectTo = isVendor ? '/vendor/onboarding' : '/dashboard/buyer';
-      } else if (adminBootstrap || existingProfile.role === 'ADMIN') {
-        redirectTo = '/admin';
       } else if (
         existingProfile.vendorApprovalStatus === 'PENDING' &&
         existingProfile.vendorOnboardingCreatedAt &&
