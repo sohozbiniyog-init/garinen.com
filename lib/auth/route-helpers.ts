@@ -7,8 +7,6 @@ export type PendingCookie = {
   options?: Record<string, unknown>;
 };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export type IdentifierKind = 'email';
 
 export function normalizeIdentifier(input: string): { kind: IdentifierKind; value: string } | null {
@@ -19,7 +17,22 @@ export function normalizeIdentifier(input: string): { kind: IdentifierKind; valu
 
   if (raw.includes('@')) {
     const email = raw.toLowerCase();
-    return EMAIL_RE.test(email) ? { kind: 'email', value: email } : null;
+    if (email.includes(' ') || email.includes('\t') || email.includes('\n') || email.includes('\r')) {
+      return null;
+    }
+
+    const atIndex = email.indexOf('@');
+    if (atIndex <= 0 || atIndex !== email.lastIndexOf('@')) {
+      return null;
+    }
+
+    const domain = email.slice(atIndex + 1);
+    const dotIndex = domain.lastIndexOf('.');
+    if (dotIndex <= 0 || dotIndex === domain.length - 1) {
+      return null;
+    }
+
+    return { kind: 'email', value: email };
   }
 
   return null;
