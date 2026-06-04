@@ -73,3 +73,26 @@ ghuri-automobiles/
 - ✅ JWT-based authorization
 - ⏳ Change password + hardcoded admin cleanup
 - ⏳ Rate limiting, 2FA, audit logs
+
+## Sentry configuration
+
+If you enable Sentry for error monitoring, configure the following environment variables instead of committing secrets:
+
+- `SENTRY_DSN` — server-side DSN (used by `sentry.server.config.ts` / edge/server).
+- `NEXT_PUBLIC_SENTRY_DSN` — client-side DSN (used by `instrumentation-client.ts`).
+- `SENTRY_TRACES_SAMPLE_RATE` — server-side traces sample rate (e.g. `0.1`).
+- `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` — client-side traces sample rate (e.g. `0.0`).
+- `SENTRY_ORG` and `SENTRY_PROJECT` — optional, used by the Sentry build plugin if you upload source maps.
+
+Do NOT commit auth tokens or `.env.sentry-build-plugin`. Keep tokens in your CI/CD or local environment (e.g., `.env.local`) and never push them to the repo.
+
+Example (local `.env.local`):
+
+```
+NEXT_PUBLIC_SENTRY_DSN=https://<public_key>@o12345.ingest.sentry.io/12345
+SENTRY_DSN=https://<server_key>@o12345.ingest.sentry.io/12345
+NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=0
+SENTRY_TRACES_SAMPLE_RATE=0.05
+```
+
+Restart the dev server after changing environment variables.
