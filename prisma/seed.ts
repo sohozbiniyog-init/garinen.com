@@ -3,6 +3,16 @@ import bcryptjs from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
 interface AdminSeedData {
   email: string;
   phone: string;
@@ -23,7 +33,7 @@ const ADMIN_SEEDS: AdminSeedData[] = [
     email: 'super.admin@ghuri.local',
     phone: '+8801711111111',
     name: 'Super Administrator',
-    password: 'SuperAdmin@2026#Secure',
+    password: requireEnv('ADMIN_SUPER_PASSWORD'),
     tier: 'SUPER_ADMIN',
     description: 'Full admin access - can add admins and manage vendors'
   },
@@ -31,7 +41,7 @@ const ADMIN_SEEDS: AdminSeedData[] = [
     email: 'vendor.admin1@ghuri.local',
     phone: '+8801722222222',
     name: 'Vendor Administrator 1',
-    password: 'VendorAdmin@2026#Secure',
+    password: requireEnv('ADMIN_VENDOR1_PASSWORD'),
     tier: 'VENDOR_ADMIN',
     description: 'Can only manage vendor assignments'
   },
@@ -39,7 +49,7 @@ const ADMIN_SEEDS: AdminSeedData[] = [
     email: 'vendor.admin2@ghuri.local',
     phone: '+8801733333333',
     name: 'Vendor Administrator 2',
-    password: 'VendorAdmin@2026#Secure',
+    password: requireEnv('ADMIN_VENDOR2_PASSWORD'),
     tier: 'BASIC_ADMIN',
     description: 'Can only manage vendor assignments'
   },
@@ -47,7 +57,7 @@ const ADMIN_SEEDS: AdminSeedData[] = [
     email: 'vendor.admin3@ghuri.local',
     phone: '+8801744444444',
     name: 'Vendor Administrator 3',
-    password: 'VendorAdmin@2026#Secure',
+    password: requireEnv('ADMIN_VENDOR3_PASSWORD'),
     tier: 'BASIC_ADMIN',
     description: 'Can only manage vendor assignments'
   },
@@ -55,7 +65,7 @@ const ADMIN_SEEDS: AdminSeedData[] = [
     email: 'vendor.admin4@ghuri.local',
     phone: '+8801755555555',
     name: 'Vendor Administrator 4',
-    password: 'VendorAdmin@2026#Secure',
+    password: requireEnv('ADMIN_VENDOR4_PASSWORD'),
     tier: 'BASIC_ADMIN',
     description: 'Can only manage vendor assignments'
   }
