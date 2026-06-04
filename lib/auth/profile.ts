@@ -31,8 +31,8 @@ export async function syncUserProfile(input: SyncUserProfileInput): Promise<User
     phone,
     role: input.role,
     adminTier: input.adminTier || undefined,
-    vendorApprovalStatus: input.vendorApprovalStatus || undefined,
-    vendorOnboardingCreatedAt: input.vendorOnboardingCreatedAt || undefined,
+    vendorApprovalStatus: input.vendorApprovalStatus ?? null,
+    vendorOnboardingCreatedAt: input.vendorOnboardingCreatedAt ?? null,
   };
 
   const upsertProfile = (includePhone: boolean) =>
@@ -53,7 +53,7 @@ export async function syncUserProfile(input: SyncUserProfileInput): Promise<User
         role: profileData.role as Role,
         adminTier: profileData.adminTier,
         vendorApprovalStatus: profileData.vendorApprovalStatus,
-        ...(profileData.vendorOnboardingCreatedAt ? { vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt as Date | null } : {}),
+        vendorOnboardingCreatedAt: profileData.vendorOnboardingCreatedAt as Date | null,
       },
       // return full user record
     });
