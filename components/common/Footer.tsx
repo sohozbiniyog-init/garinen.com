@@ -58,8 +58,7 @@ export function SiteFooter() {
               </div>
 
               <p className="max-w-sm text-sm leading-relaxed text-slate-400">
-                Bangladesh&apos;s premium automotive marketplace.
-                Connecting buyers and vendors with trust, quality, and service.
+                Bangladesh&apos;s 1st On-demand Automotive Marketplace with 360° solutions.
               </p>
 
               <div className="mt-8 space-y-5">
@@ -95,7 +94,7 @@ export function SiteFooter() {
                 </a>
 
                 <a
-                  href="mailto:info@ghuriautomobiles.com"
+                  href="mailto:contact@garinen.com"
                   className="group flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-3 transition hover:border-brand-red/20 hover:bg-white/[0.04]"
                 >
                   <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-red/10 text-brand-red transition group-hover:bg-brand-red group-hover:text-white">
@@ -103,14 +102,14 @@ export function SiteFooter() {
                   </span>
                   <span>
                     <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-brand-red">Email</span>
-                    <span className="mt-1 block text-sm text-slate-300">info@ghuriautomobiles.com</span>
+                    <span className="mt-1 block text-sm text-slate-300">contact@garinen.com</span>
                   </span>
                 </a>
 
               </div>
             </div>
           </div>
-
+ 
           {/* Browse */}
           <div>
             <h3 className="mb-6 text-xs font-black uppercase tracking-[0.28em] text-brand-red">
@@ -143,8 +142,9 @@ export function SiteFooter() {
               </Link>
             </nav>
           </div>
-
-          {/* Vendors */}
+       
+          {/*
+          Vendors
           <div>
             <h3 className="mb-6 text-xs font-black uppercase tracking-[0.28em] text-brand-red">
               Vendors
@@ -172,7 +172,8 @@ export function SiteFooter() {
               </Link>
             </nav>
           </div>
-
+          */}
+        
           {/* Company */}
           <div>
             <h3 className="mb-6 text-xs font-black uppercase tracking-[0.28em] text-brand-red">
