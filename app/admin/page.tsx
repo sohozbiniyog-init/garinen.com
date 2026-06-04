@@ -71,6 +71,24 @@ export default async function AdminPage() {
       allowed: true,
     },
     {
+      title: 'Featured Cars',
+      description: 'Select the cars that should appear in the featured carousel.',
+      href: '/admin/featured',
+      allowed: true,
+    },
+    {
+      title: 'Featured Vendors',
+      description: 'Choose which vendors should be highlighted on the homepage.',
+      href: '/admin/featured-vendors',
+      allowed: true,
+    },
+    {
+      title: 'Featured Reviews',
+      description: 'Manage the customer reviews that appear on the homepage.',
+      href: '/admin/featured-reviews',
+      allowed: true,
+    },
+    {
       title: 'Admin Management',
       description: 'Create and manage admin accounts and assign admin tiers.',
       href: '/admin/admins',

@@ -57,6 +57,17 @@ enum OfferSource {
   ADMIN
 }
 
+enum FeatureStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum FeatureSource {
+  VENDOR
+  ADMIN
+}
+
 enum PaymentStatus {
   PENDING
   AUTHORIZED
@@ -124,6 +135,8 @@ model User {
   offers     Offer[]
   loanApplications LoanApplication[]
   audits     AuditLog[]
+  featuredListingsRequested FeaturedListing[] @relation("FeatureRequester")
+  featuredListingsApproved  FeaturedListing[] @relation("FeatureApprover")
 }
 
 model Shop {
@@ -156,9 +169,10 @@ model Listing {
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 
-  shop       Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  bookings   Booking[]
-  reviews    Review[]
+  shop            Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  bookings        Booking[]
+  reviews         Review[]
+  featuredListing FeaturedListing?
 
   @@index([shopId, status, createdAt])
   @@index([brand, model, status])
@@ -228,6 +242,27 @@ model Review {
   listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId, featured, createdAt])
+}
+
+model FeaturedListing {
+  id          String        @id @default(cuid())
+  listingId   String        @unique
+  requestedBy String
+  approvedBy  String?
+  sourceRole  FeatureSource @default(VENDOR)
+  status      FeatureStatus @default(PENDING)
+  displayOrder Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  listing     Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  requester   User          @relation("FeatureRequester", fields: [requestedBy], references: [id], onDelete: Cascade)
+  approver    User?         @relation("FeatureApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([listingId, status])
+  @@index([status, displayOrder, createdAt])
+  @@index([sourceRole, status])
+  @@index([approvedBy])
 }
 
 model Offer {

@@ -15,7 +15,7 @@ coverage/
 # Ignore all files in the "out" directory
 out/
 # Ignore all files in the "public" directory except for "favicon.ico"
-
+scripts/
 # Track source code files (allow .tsx, .ts, .json in key directories)
 !lib/**/*.ts
 !lib/**/*.tsx
@@ -32,5 +32,6 @@ out/
 *.log
 *.txt
 *.html
+
 
 

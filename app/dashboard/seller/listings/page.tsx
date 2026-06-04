@@ -143,8 +143,8 @@ export default function SellerListingsPage() {
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white">{listing.title}</h3>
-                  <p className="text-sm text-slate-300">
+                  <h3 className="text-lg font-semibold text-black">{listing.title}</h3>
+                  <p className="text-sm text-black">
                     {listing.brand} {listing.model} • {listing.year}
                   </p>
                 </div>
@@ -155,22 +155,22 @@ export default function SellerListingsPage() {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm py-3 border-y border-white/10">
                 <div>
-                  <p className="text-slate-400">Price</p>
-                  <p className="font-semibold text-white">৳ {parseFloat(listing.price).toLocaleString()}</p>
+                  <p className="text-black">Price</p>
+                  <p className="font-semibold text-black">৳ {parseFloat(listing.price).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400">Condition</p>
-                  <p className="font-semibold text-white capitalize">{listing.condition.toLowerCase()}</p>
+                  <p className="text-black">Condition</p>
+                  <p className="font-semibold text-black capitalize">{listing.condition.toLowerCase()}</p>
                 </div>
                 {listing.condition !== 'NEW' && (
                   <div>
-                    <p className="text-slate-400">Mileage</p>
-                    <p className="font-semibold text-white">{listing.mileage?.toLocaleString()} km</p>
+                    <p className="text-black">Mileage</p>
+                    <p className="font-semibold text-black">{listing.mileage?.toLocaleString()} km</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-slate-400">Location</p>
-                  <p className="font-semibold text-white">{listing.location}</p>
+                  <p className="text-black">Location</p>
+                  <p className="font-semibold text-black">{listing.location}</p>
                 </div>
               </div>
 
@@ -189,13 +189,13 @@ export default function SellerListingsPage() {
 
               <div className="flex gap-2 pt-4">
                 <Link href={`/dashboard/seller/listings/${listing.id}`}>
-                  <button className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition">
+                  <button className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-black hover:bg-white/20 transition">
                     View Details
                   </button>
                 </Link>
                 {!listing.hasActiveBooking && (
                   <Link href={`/dashboard/seller/listings/${listing.id}/edit`}>
-                    <button className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition">
+                    <button className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-black hover:bg-white/20 transition">
                       Edit
                     </button>
                   </Link>

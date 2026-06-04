@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
 import { PasswordField } from '@/components/auth/PasswordField';
 
 type FormState = {
@@ -14,7 +13,6 @@ type FormState = {
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<FormState>({
     email: '',
     password: '',
@@ -23,37 +21,20 @@ export default function AdminLoginPage() {
   });
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-      );
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return;
-      }
-
+    const checkAdminSession = async () => {
       try {
-        const res = await fetch('/api/auth/me');
-        const json = await res.json();
-        const role = json?.profile?.role || json?.claims?.role || 'BUYER';
+        const res = await fetch('/api/auth/admin/me');
+        const data = await res.json();
 
-        if (role === 'ADMIN') {
+        if (res.ok && data?.claims?.role === 'ADMIN') {
           router.replace('/admin');
-        } else {
-          router.replace('/dashboard/buyer');
         }
       } catch {
-        router.replace('/dashboard/buyer');
+        // Stay on the admin login page if admin auth cannot be confirmed.
       }
     };
 
-    checkAuth();
+    checkAdminSession();
   }, [router]);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -81,7 +62,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.replace(typeof data?.redirectTo === 'string' && data.redirectTo ? data.redirectTo : '/admin');
+      window.location.assign(typeof data?.redirectTo === 'string' && data.redirectTo ? data.redirectTo : '/admin');
     } catch {
       setState((current) => ({
         ...current,

@@ -61,6 +61,8 @@ export async function GET(request: NextRequest) {
           condition: listing.condition,
           mileage: listing.mileage,
           location: listing.location,
+          imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls : [],
+          videoUrls: Array.isArray(listing.videoUrls) ? listing.videoUrls : [],
           status: listing.status,
           adminNotes: listing.adminNotes,
           createdAt: listing.createdAt,

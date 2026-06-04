@@ -14,6 +14,8 @@ interface PendingListing {
   condition: 'NEW' | 'USED' | 'RECONDITIONED';
   mileage: number | null;
   location: string;
+  imageUrls: string[];
+  videoUrls: string[];
   status: string;
   adminNotes: string | null;
   createdAt: string;
@@ -36,7 +38,17 @@ export default function AdminListingsPage() {
   const [selectedListingId, setSelectedListingId] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [imageUrlsText, setImageUrlsText] = useState('');
+  const [videoUrlsText, setVideoUrlsText] = useState('');
   const [uploading, setUploading] = useState(false);
+
+  const parseUrlLines = (value: string) =>
+    value
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+  const selectedListing = listings.find((l) => l.id === selectedListingId);
 
   useEffect(() => {
     const checkAccessAndFetchListings = async () => {
@@ -76,6 +88,17 @@ export default function AdminListingsPage() {
     checkAccessAndFetchListings();
   }, [router]);
 
+  useEffect(() => {
+    if (!selectedListing) {
+      setImageUrlsText('');
+      setVideoUrlsText('');
+      return;
+    }
+
+    setImageUrlsText((selectedListing.imageUrls || []).join('\n'));
+    setVideoUrlsText((selectedListing.videoUrls || []).join('\n'));
+  }, [selectedListingId, selectedListing]);
+
   const handleApprove = async (listingId: string) => {
     setProcessingId(listingId);
     try {
@@ -96,7 +119,9 @@ export default function AdminListingsPage() {
       }
 
       showToast('Listing approved successfully', { type: 'success' });
-      setListings(listings.filter((l) => l.id !== listingId));
+      setListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: 'APPROVED', adminNotes: noteValue[listingId] || l.adminNotes } : l))
+      );
       setNoteValue((prev) => {
         const updated = { ...prev };
         delete updated[listingId];
@@ -130,7 +155,9 @@ export default function AdminListingsPage() {
       }
 
       showToast('Listing rejected', { type: 'success' });
-      setListings(listings.filter((l) => l.id !== listingId));
+      setListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: 'REJECTED', adminNotes: noteValue[listingId] || 'Rejected by admin' } : l))
+      );
       setNoteValue((prev) => {
         const updated = { ...prev };
         delete updated[listingId];
@@ -150,7 +177,6 @@ export default function AdminListingsPage() {
       return;
     }
 
-    const selectedListing = listings.find((l) => l.id === selectedListingId);
     if (!selectedListing) {
       showToast('Listing not found', { type: 'error' });
       return;
@@ -158,24 +184,16 @@ export default function AdminListingsPage() {
 
     const hasFiles = selectedFiles.length > 0;
     const hasUrl = youtubeUrl.trim();
+    const parsedImageUrls = parseUrlLines(imageUrlsText);
+    const parsedVideoUrls = parseUrlLines(videoUrlsText);
 
-    if (!hasFiles && !hasUrl) {
-      showToast('Add at least one image or a YouTube URL', { type: 'error' });
-      return;
-    }
-
-    // File uploads only for PENDING listings
-    if (hasFiles && selectedListing.status !== 'PENDING') {
-      showToast(
-        'File uploads are only allowed for PENDING listings. Use URL updates for approved listings.',
-        { type: 'error' }
-      );
+    if (!hasFiles && !hasUrl && parsedImageUrls.length === 0 && parsedVideoUrls.length === 0) {
+      showToast('Add at least one image file or media URL', { type: 'error' });
       return;
     }
 
     setUploading(true);
     try {
-      // If only URL, use PATCH; if files, use POST
       if (hasFiles) {
         const formData = new FormData();
         selectedFiles.slice(0, 5).forEach((file) => formData.append('files', file));
@@ -194,25 +212,49 @@ export default function AdminListingsPage() {
           return;
         }
 
-        showToast('Listing media uploaded successfully', { type: 'success' });
-      } else {
-        // URL-only update via PATCH (works for any status)
-        const res = await fetch(`/api/admin/listings/${selectedListingId}/media`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            videoUrls: hasUrl ? [youtubeUrl.trim()] : [],
-          }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          showToast(data.error || 'Failed to update listing URLs', { type: 'error' });
-          return;
-        }
-
-        showToast('Listing URLs updated successfully', { type: 'success' });
+        setListings((prev) =>
+          prev.map((l) =>
+            l.id === selectedListingId
+              ? {
+                  ...l,
+                  imageUrls: data.imageUrls || l.imageUrls,
+                  videoUrls: data.videoUrls || l.videoUrls,
+                }
+              : l
+          )
+        );
       }
+
+      const patchRes = await fetch(`/api/admin/listings/${selectedListingId}/media`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrls: parsedImageUrls,
+          videoUrls: hasUrl ? [...parsedVideoUrls, youtubeUrl.trim()] : parsedVideoUrls,
+        }),
+      });
+
+      const patchData = await patchRes.json();
+      if (!patchRes.ok) {
+        showToast(patchData.error || 'Failed to update listing URLs', { type: 'error' });
+        return;
+      }
+
+      setListings((prev) =>
+        prev.map((l) =>
+          l.id === selectedListingId
+            ? {
+                ...l,
+                imageUrls: patchData.imageUrls || l.imageUrls,
+                videoUrls: patchData.videoUrls || l.videoUrls,
+              }
+            : l
+        )
+      );
+
+      setImageUrlsText((patchData.imageUrls || []).join('\n'));
+      setVideoUrlsText((patchData.videoUrls || []).join('\n'));
+      showToast('Listing media saved successfully', { type: 'success' });
 
       setSelectedFiles([]);
       setYoutubeUrl('');
@@ -251,7 +293,7 @@ export default function AdminListingsPage() {
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Moderation</p>
         <h1 className="mt-3 text-4xl font-bold text-white">Pending Listings</h1>
         <p className="mt-3 text-sm leading-7 text-slate-300">
-          Review and approve or reject vehicle listings from vendors before they appear on the marketplace.
+          Review and approve or reject vehicle listings from vendors before they appear on the marketplace. Media can be edited for any listing status from the section below.
         </p>
       </section>
 
@@ -350,6 +392,7 @@ export default function AdminListingsPage() {
             <p className="text-xs uppercase tracking-[0.15em] text-slate-400">Admin Media Gallery</p>
             <h2 className="mt-2 text-2xl font-bold text-white">Upload listing media</h2>
             <p className="mt-2 text-sm text-slate-300">Only admins can add images or videos. Sellers do not upload media from their dashboard. File uploads are for PENDING listings; URL updates work on any listing.</p>
+            <p className="mt-1 text-sm text-slate-300">Admins can upload image files and fully replace image/video URL galleries for approved listings too.</p>
           </div>
           <div className="min-w-[240px]">
             <select
@@ -377,7 +420,7 @@ export default function AdminListingsPage() {
               onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []).slice(0, 5))}
               className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
             />
-            <p className="text-xs text-slate-400">Upload up to 5 images for PENDING listings. They will be stored in the Supabase photo bucket. Use YouTube URL field for URL-only updates on approved listings.</p>
+            <p className="text-xs text-slate-400">Upload up to 5 images for any listing status. Files are stored in the Supabase photo bucket, and URL galleries can be edited below.</p>
             {selectedFiles.length > 0 ? (
               <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
                 {selectedFiles.map((file) => (
@@ -396,6 +439,29 @@ export default function AdminListingsPage() {
               className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <p className="text-xs text-slate-400">Use an unlisted YouTube URL if you want the listing to show a video. Can be updated for any listing status.</p>
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <label className="space-y-2 text-sm">
+            <span className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Image URL Gallery (one URL per line)</span>
+            <textarea
+              value={imageUrlsText}
+              onChange={(e) => setImageUrlsText(e.target.value)}
+              placeholder="https://.../photo-1.webp"
+              rows={6}
+              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </label>
+          <label className="space-y-2 text-sm">
+            <span className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Video URL Gallery (one URL per line)</span>
+            <textarea
+              value={videoUrlsText}
+              onChange={(e) => setVideoUrlsText(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              rows={6}
+              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </label>
         </div>
 

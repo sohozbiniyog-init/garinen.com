@@ -109,24 +109,24 @@ export default function ListingDetailsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 p-6 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 rounded-lg bg-gray-50 p-6 text-slate-900">
           <div>
             <p className="text-gray-600 text-sm mb-1">Price</p>
-            <p className="text-2xl font-bold">৳ {parseFloat(listing.price).toLocaleString()}</p>
+            <p className="text-2xl font-bold text-slate-900">৳ {parseFloat(listing.price).toLocaleString()}</p>
           </div>
           <div>
             <p className="text-gray-600 text-sm mb-1">Condition</p>
-            <p className="text-lg font-semibold capitalize">{listing.condition.toLowerCase()}</p>
+            <p className="text-lg font-semibold capitalize text-slate-900">{listing.condition.toLowerCase()}</p>
           </div>
           {listing.condition !== 'NEW' && (
             <div>
               <p className="text-gray-600 text-sm mb-1">Mileage</p>
-              <p className="text-lg font-semibold">{listing.mileage?.toLocaleString()} km</p>
+              <p className="text-lg font-semibold text-slate-900">{listing.mileage?.toLocaleString()} km</p>
             </div>
           )}
           <div>
             <p className="text-gray-600 text-sm mb-1">Location</p>
-            <p className="text-lg font-semibold">{listing.location}</p>
+            <p className="text-lg font-semibold text-slate-900">{listing.location}</p>
           </div>
         </div>
 

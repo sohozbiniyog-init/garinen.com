@@ -200,6 +200,7 @@ export function AuthCard({
       name,
       phone,
       password,
+      confirmPassword,
       isVendor: mode === 'signup' && wantToSignupAsVendor,
     });
   };
@@ -392,6 +393,7 @@ export function AuthCard({
             name,
             phone,
             password,
+            confirmPassword,
             isVendor: true,
           });
         }}

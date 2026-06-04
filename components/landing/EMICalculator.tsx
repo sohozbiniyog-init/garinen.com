@@ -42,7 +42,7 @@ export default function EmiCalculator({ carPrice: initialPrice = 3000000 }: Prop
   const formatBDT = (amount: number) => '৳ ' + Math.round(amount).toLocaleString('en-IN');
 
   return (
-    <div className="w-full max-w-md overflow-hidden rounded-[1.5rem] border border-black/10 bg-white/85 p-4 shadow-soft lg:p-5">
+    <div className="w-full max-w-md overflow-hidden rounded-[1.5rem] border border-black/10 bg-white/85 p-4 text-ink shadow-soft lg:p-5">
       {/* Controls - Compact */}
       <div className="space-y-4 lg:space-y-5">
         <div>
@@ -165,7 +165,7 @@ export default function EmiCalculator({ carPrice: initialPrice = 3000000 }: Prop
       </div>
 
       {/* Result - Right Side */}
-      <div className="space-y-4 rounded-[1.25rem] border border-black/5 bg-sand/20 p-4 shadow-soft">
+      <div className="space-y-4 rounded-[1.25rem] border border-black/5 bg-sand/20 p-4 text-ink shadow-soft">
         <div>
           <p className="text-[10px] uppercase tracking-[0.2em] text-smoke">Estimated Monthly EMI</p>
           <div className="mt-2 flex flex-col gap-1">

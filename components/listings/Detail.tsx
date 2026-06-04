@@ -120,7 +120,9 @@ export function ListingDetail({
   const [testDriveConfirmation, setTestDriveConfirmation] = useState<TestDriveFormData | null>(null);
   const [reviews, setReviews] = useState(sampleReviews);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const youtubeVideoId = videoUrls.length > 0 ? getYouTubeId(videoUrls[0]) : null;
+  const youtubeVideoIds = videoUrls
+    .map((url) => getYouTubeId(url))
+    .filter((id): id is string => Boolean(id));
 
   const handleBookingSubmit = async (data: BookingFormData) => {
     setBookingLoading(true);
@@ -217,7 +219,7 @@ export function ListingDetail({
 
       <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-6">
-          <div className="glass-card rounded-[2rem] p-8 shadow-soft">
+          <div className="glass-card rounded-[2rem] p-8 text-slate-900 shadow-soft">
             <div className="space-y-6">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-slate-600">Listing Details</p>
@@ -226,7 +228,7 @@ export function ListingDetail({
 
               {/* Gallery: admin-managed media only */}
               <div className="mt-4">
-                {imageUrls.length > 0 || youtubeVideoId ? (
+                {imageUrls.length > 0 || youtubeVideoIds.length > 0 ? (
                   <div className="grid gap-4 lg:grid-cols-[1fr_200px]">
                     <div className="rounded-lg bg-slate-100 p-3">
                       <div className="aspect-[16/9] overflow-hidden rounded-lg bg-slate-200">
@@ -257,17 +259,21 @@ export function ListingDetail({
                     </div>
 
                     <div className="space-y-3">
-                      {youtubeVideoId ? (
-                        <div className="overflow-hidden rounded-md bg-slate-100">
-                          <iframe
-                            className="aspect-[16/9] w-full"
-                            src={`https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&fs=1`}
-                            title={`${title} video walkthrough`}
-                            loading="lazy"
-                            referrerPolicy="strict-origin-when-cross-origin"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowFullScreen
-                          />
+                      {youtubeVideoIds.length > 0 ? (
+                        <div className="space-y-3">
+                          {youtubeVideoIds.slice(0, 3).map((videoId, index) => (
+                            <div key={`${videoId}-${index}`} className="overflow-hidden rounded-md bg-slate-100">
+                              <iframe
+                                className="aspect-[16/9] w-full"
+                                src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&fs=1`}
+                                title={`${title} video walkthrough ${index + 1}`}
+                                loading="lazy"
+                                referrerPolicy="strict-origin-when-cross-origin"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen
+                              />
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="flex aspect-[16/9] items-center justify-center rounded-md bg-slate-100 text-xs text-slate-500">
@@ -284,7 +290,7 @@ export function ListingDetail({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-6 border-t border-white/20 pt-6 text-sm">
+              <div className="grid grid-cols-2 gap-6 border-t border-white/20 pt-6 text-sm text-slate-900">
                 <div>
                   <p className="text-xs text-slate-600">Brand & Model</p>
                   <p className="mt-2 text-lg font-bold text-slate-900">
@@ -305,7 +311,7 @@ export function ListingDetail({
                 </div>
               </div>
 
-              <div className="glass-card-strong rounded-2xl p-6">
+              <div className="glass-card-strong rounded-2xl p-6 text-slate-900">
                 <p className="text-xs text-slate-700 font-semibold">Listed by</p>
                 <p className="mt-2 text-lg font-bold text-slate-900">{shopName}</p>
               </div>

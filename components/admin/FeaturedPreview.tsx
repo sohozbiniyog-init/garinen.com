@@ -12,7 +12,7 @@ export function AdminFeaturedPreview() {
     .slice(0, 3) as typeof listings;
 
   return (
-    <div className="group overflow-hidden rounded-[2rem] border border-black/10 bg-white/80 p-6 shadow-soft">
+    <div className="group overflow-hidden rounded-[2rem] border border-black/10 bg-white/80 p-6 text-slate-900 shadow-soft">
       <div className="space-y-3">
         <div className="inline-flex rounded-full bg-gold/10 px-3 py-2">
           <span className="text-2xl">⭐</span>

@@ -4,6 +4,7 @@ import { SiteHeader } from '@/components/common/Header';
 import NewCarsCarousel from '@/components/landing/NewCarsCarousel';
 import HeroSearchForm from '@/components/landing/HeroSearch';
 import { CustomerTestimonials } from '@/components/landing/Testimonials';
+import { FeaturedVendors } from '@/components/landing/FeaturedVendors';
 import { OffersShowcase, PublicOffer } from '@/components/landing/Offers';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -115,8 +116,10 @@ export default async function HomePage({
         <FeaturedCarousel />
       </section>
 
+      <FeaturedVendors />
+
       <OffersShowcase offers={offers} />
-    <section className="mt-16">
+      <section className="mt-16">
         <CustomerTestimonials />
       </section>
     </main>
