@@ -29,6 +29,7 @@ scripts/
 *.sql
 *.md
 !README.md
+!SECURITY.md
 *.log
 *.txt
 *.html
