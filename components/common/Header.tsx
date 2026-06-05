@@ -183,6 +183,7 @@ export function SiteHeader() {
         <nav className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2 py-2 md:flex">
           <Link href="/listings" className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/8 hover:text-white">Listings</Link>
           <Link href="/custom-order" className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/8 hover:text-white">Custom Order</Link>
+          <Link href="/test-drive" className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/8 hover:text-white">Test Drive</Link>
           <Link href="/emi-tools" className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/8 hover:text-white">EMI Tools</Link>
         </nav>
         {/* Right: Auth area */}

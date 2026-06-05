@@ -1,5 +1,4 @@
 import FeaturedCarousel from '@/components/listings/FeaturedCarousel';
-import EmiCalculator from '@/components/landing/EMICalculator';
 import { SiteHeader } from '@/components/common/Header';
 import NewCarsCarousel from '@/components/landing/NewCarsCarousel';
 import HeroSearchForm from '@/components/landing/HeroSearch';

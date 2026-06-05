@@ -61,21 +61,22 @@ export function prepareBookingsForCSV(bookings: unknown[]): Record<string, unkno
   });
 }
 
-export function prepareTestDrivesForCSV(bookings: unknown[]): Record<string, unknown>[] {
-  return bookings
-    .map((b) => b as Record<string, unknown>)
-    .filter((b) => b['status'] === 'TEST_DRIVE')
-    .map((booking) => ({
-      'Booking ID': booking['id'] ?? 'N/A',
-      'Buyer Name': (booking['user'] as Record<string, unknown> | undefined)?.['name'] ?? 'N/A',
-      'Buyer Email': (booking['user'] as Record<string, unknown> | undefined)?.['email'] ?? 'N/A',
-      'Buyer Phone': (booking['user'] as Record<string, unknown> | undefined)?.['phone'] ?? 'N/A',
-      'Listing Title': (booking['listing'] as Record<string, unknown> | undefined)?.['title'] ?? 'N/A',
-      'Status': 'Test Drive',
-      'Scheduled Date': (booking['emiDetails'] as Record<string, unknown> | undefined)?.['preferredDate'] ?? 'N/A',
-      'Scheduled Time': (booking['emiDetails'] as Record<string, unknown> | undefined)?.['preferredTime'] ?? 'N/A',
-      'Created Date': new Date(String(booking['createdAt'] ?? '')).toLocaleDateString(),
-    }));
+export function prepareTestDrivesForCSV(testDrives: unknown[]): Record<string, unknown>[] {
+  return testDrives.map((td) => {
+    const t = td as Record<string, unknown>;
+    return {
+      'Request ID': t['id'] ?? 'N/A',
+      'Name': t['name'] ?? 'N/A',
+      'Email': t['email'] ?? 'N/A',
+      'Phone': t['phone'] ?? 'N/A',
+      'Preferred Date': t['preferredDate'] ?? 'N/A',
+      'Preferred Time': t['preferredTime'] ?? 'N/A',
+      'Listing ID': t['listingId'] ?? 'N/A',
+      'Notes': t['notes'] ?? 'N/A',
+      'Status': t['status'] ?? 'PENDING',
+      'Created Date': new Date(String(t['createdAt'] ?? '')).toLocaleDateString(),
+    };
+  });
 }
 
 export function prepareLoansForCSV(loans: unknown[]): Record<string, unknown>[] {

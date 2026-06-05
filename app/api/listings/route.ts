@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
         model: listing.model,
         year: listing.year,
         price: listing.price.toString(),
+        condition: listing.condition,
         location: listing.location,
         mileage: listing.mileage,
         shopName: listing.shop.name,

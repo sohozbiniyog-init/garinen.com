@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import WishlistButton from '@/components/buyers/WishlistButton';
 import { BANGLADESH_DIVISIONS } from '@/lib/config/divisions';
 
+type VehicleCondition = 'NEW' | 'USED' | 'RECONDITIONED';
+
 interface Listing {
   id: string;
   title: string;
@@ -15,7 +17,7 @@ interface Listing {
   price: number; // numeric price in BDT
   location: string;
   shopName: string;
-  condition: 'new' ;
+  condition: VehicleCondition;
 }
 
 // Price range mapping for budget filters
@@ -33,7 +35,7 @@ function ListingsContent() {
   const searchParams = useSearchParams();
   const [searchBrand, setSearchBrand] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
-  const [conditionFilter] = useState<'all' | Listing['condition']>('all');
+  const [conditionFilter, setConditionFilter] = useState<'all' | Listing['condition']>('all');
   const [sortOption, setSortOption] = useState<'none' | 'price-asc' | 'price-desc' | 'year-desc' | 'location-asc'>('none');
   const [budgetFilter, setBudgetFilter] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -58,6 +60,11 @@ function ListingsContent() {
     if (location) {
       setLocationFilter(location);
     }
+
+    const condition = searchParams.get('condition');
+    if (condition === 'NEW' || condition === 'USED' || condition === 'RECONDITIONED') {
+      setConditionFilter(condition);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -75,6 +82,7 @@ function ListingsContent() {
           model: string;
           year: number;
           price: string;
+          condition: VehicleCondition;
           location: string;
           shopName: string;
         }>;
@@ -83,7 +91,7 @@ function ListingsContent() {
           data.map((listing) => ({
             ...listing,
             price: Number(listing.price),
-            condition: 'new' as const,
+            condition: listing.condition,
           }))
         );
       } catch (loadError) {
@@ -147,7 +155,7 @@ function ListingsContent() {
       ) : null}
 
       <div className="glass-card mb-6 rounded-[2rem] p-5 shadow-soft">
-        <div className="grid gap-5 lg:grid-cols-5">
+        <div className="grid gap-5 lg:grid-cols-7">
           <label className="block">
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">Brand</span>
             <select
@@ -161,6 +169,20 @@ function ListingsContent() {
                   {brand}
                 </option>
               ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">Condition</span>
+            <select
+              value={conditionFilter}
+              onChange={(e) => setConditionFilter(e.target.value as 'all' | VehicleCondition)}
+              className="glass-field w-full rounded-xl px-4 py-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red"
+            >
+              <option value="all">All Conditions</option>
+              <option value="NEW">New</option>
+              <option value="USED">Used</option>
+              <option value="RECONDITIONED">Reconditioned</option>
             </select>
           </label>
 

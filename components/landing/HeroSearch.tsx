@@ -32,16 +32,25 @@ const brandOptions = [
   'Toyota'
 ];
 
+const conditionOptions = [
+  { value: '', label: 'All Conditions' },
+  { value: 'new', label: 'New' },
+  { value: 'used', label: 'Used' },
+  { value: 'reconditioned', label: 'Reconditioned' },
+] as const;
+
 export default function HeroSearchForm() {
   const router = useRouter();
   const [budget, setBudget] = useState('');
   const [brand, setBrand] = useState('All Brands');
+  const [condition, setCondition] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (budget) params.append('budget', budget);
     if (brand && brand !== 'All Brands') params.append('brand', brand);
+    if (condition) params.append('condition', condition.toUpperCase());
     router.push(`/listings?${params.toString()}`);
   };
 
@@ -49,10 +58,28 @@ export default function HeroSearchForm() {
     <div className="w-full max-w-md mx-auto rounded-[2rem] p-8 shadow-lg border border-white/10 backdrop-blur-2xl" style={{ background: 'rgba(15, 23, 42, 0.22)' }}>
       <div className="mb-6">
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Find your right car</p>
-        <h2 className="mt-2 text-2xl font-bold text-white">New Car</h2>
+        <h2 className="mt-2 text-2xl font-bold text-white">
+          {condition ? conditionOptions.find(o => o.value === condition)?.label || 'Car' : 'New Car'}
+        </h2>
       </div>
 
       <form onSubmit={handleSearch} className="space-y-4">
+        {/* Condition Dropdown */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider font-semibold text-white mb-2">Condition</label>
+          <select
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+            className="hero-select w-full rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none border border-white/10" style={{ background: 'rgba(255, 255, 255, 0.92)' }}
+          >
+            {conditionOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Budget Dropdown */}
         <div>
           <label className="block text-xs uppercase tracking-wider font-semibold text-white mb-2">Select Budget</label>

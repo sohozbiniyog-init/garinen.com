@@ -27,6 +27,19 @@ interface BookingWithRelations {
   emiDetails: Record<string, unknown>;
 }
 
+interface TestDrive {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  preferredDate: string | null;
+  preferredTime: string | null;
+  listingId: string | null;
+  notes: string | null;
+  status: string;
+  createdAt: string;
+}
+
 interface LoanApplication {
   id: string;
   name: string;
@@ -40,9 +53,25 @@ interface LoanApplication {
 
 type TabType = 'bookings' | 'test-drives' | 'loans';
 
+const STATUS_ACTIONS: Record<string, { label: string; color: string; nextStatus: string }[]> = {
+  PENDING: [
+    { label: 'Contacted', color: 'bg-blue-600 hover:bg-blue-700', nextStatus: 'CONTACTED' },
+    { label: 'Cancel', color: 'bg-red-600 hover:bg-red-700', nextStatus: 'CANCELLED' },
+  ],
+  CONTACTED: [
+    { label: 'Confirm', color: 'bg-green-600 hover:bg-green-700', nextStatus: 'CONFIRMED' },
+    { label: 'Cancel', color: 'bg-red-600 hover:bg-red-700', nextStatus: 'CANCELLED' },
+  ],
+  CONFIRMED: [
+    { label: 'Complete', color: 'bg-moss hover:bg-moss/80', nextStatus: 'COMPLETED' },
+    { label: 'Cancel', color: 'bg-red-600 hover:bg-red-700', nextStatus: 'CANCELLED' },
+  ],
+};
+
 export default function AdminBookingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('bookings');
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
+  const [testDrives, setTestDrives] = useState<TestDrive[]>([]);
   const [loans, setLoans] = useState<LoanApplication[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -59,6 +88,12 @@ export default function AdminBookingsPage() {
         if (response.ok) {
           const data = await response.json();
           setBookings(data);
+        }
+      } else if (activeTab === 'test-drives') {
+        const response = await fetch('/api/admin/test-drives');
+        if (response.ok) {
+          const data = await response.json();
+          setTestDrives(data);
         }
       } else if (activeTab === 'loans') {
         const response = await fetch('/api/admin/loans');
@@ -80,7 +115,7 @@ export default function AdminBookingsPage() {
       const csvData = prepareBookingsForCSV(bookings);
       exportToCSV(csvData, 'booking-requests');
     } else if (activeTab === 'test-drives') {
-      const csvData = prepareTestDrivesForCSV(bookings);
+      const csvData = prepareTestDrivesForCSV(testDrives);
       exportToCSV(csvData, 'test-drive-requests');
     } else if (activeTab === 'loans') {
       const csvData = prepareLoansForCSV(loans);
@@ -128,9 +163,40 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const handleUpdateTestDriveStatus = async (id: string, status: string) => {
+    try {
+      const response = await fetch('/api/admin/test-drives', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+
+      if (response.ok) {
+        showToast(`Test drive marked as ${status}`, { type: 'success' });
+        fetchData();
+      } else {
+        showToast('Failed to update status', { type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error updating test drive:', error);
+      showToast('Error updating test drive', { type: 'error' });
+    }
+  };
+
   const filteredBookings = filterStatus
     ? bookings.filter((b) => b.status === filterStatus)
     : bookings;
+
+  const getStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      PENDING: 'bg-amber-500/20 text-amber-300',
+      CONTACTED: 'bg-blue-500/20 text-blue-300',
+      CONFIRMED: 'bg-moss/20 text-moss',
+      COMPLETED: 'bg-green-500/20 text-green-300',
+      CANCELLED: 'bg-red-500/20 text-red-300',
+    };
+    return colors[status] || 'bg-slate-500/20 text-slate-300';
+  };
 
   return (
     <main className="min-h-screen w-full px-6 py-10 lg:px-10">
@@ -193,7 +259,11 @@ export default function AdminBookingsPage() {
         )}
         <button
           onClick={handleExportCSV}
-          disabled={activeTab === 'bookings' ? filteredBookings.length === 0 : loans.length === 0}
+          disabled={
+            activeTab === 'bookings' ? filteredBookings.length === 0 :
+            activeTab === 'test-drives' ? testDrives.length === 0 :
+            loans.length === 0
+          }
           className="rounded-lg bg-white px-6 py-2 font-semibold text-slate-900 transition hover:bg-opacity-90 disabled:opacity-50"
         >
           Export as CSV
@@ -265,8 +335,67 @@ export default function AdminBookingsPage() {
 
       {/* Test Drives Tab */}
       {activeTab === 'test-drives' && (
-        <div className="rounded-lg border border-white/20 bg-white/5 p-8 text-center text-slate-400">
-          Test drive management will be displayed here
+        <div className="grid gap-4">
+          {loading ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-300">
+              Loading test drive requests...
+            </div>
+          ) : testDrives.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-300">
+              No test drive requests found
+            </div>
+          ) : (
+            testDrives.map((td) => (
+              <div
+                key={td.id}
+                className="rounded-2xl border border-white/10 bg-white/5 p-6"
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+                  <div>
+                    <p className="text-xs text-slate-400">Applicant</p>
+                    <p className="mt-1 font-semibold text-white">{td.name}</p>
+                    <p className="text-xs text-slate-500">{td.email}</p>
+                    {td.phone && <p className="text-xs text-slate-500">{td.phone}</p>}
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Preferred Schedule</p>
+                    <p className="mt-1 text-sm text-white">{td.preferredDate || 'Not specified'}</p>
+                    <p className="text-xs text-slate-500">{td.preferredTime || ''}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Status</p>
+                    <p className={`mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadge(td.status)}`}>
+                      {td.status}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Notes</p>
+                    <p className="mt-1 text-xs text-slate-300 line-clamp-2">{td.notes || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Created</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {new Date(td.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                {STATUS_ACTIONS[td.status] && (
+                  <div className="mt-4 flex gap-3 border-t border-white/20 pt-4">
+                    {STATUS_ACTIONS[td.status].map((action) => (
+                      <button
+                        key={action.nextStatus}
+                        onClick={() => handleUpdateTestDriveStatus(td.id, action.nextStatus)}
+                        className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${action.color}`}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -309,4 +438,3 @@ export default function AdminBookingsPage() {
     </main>
   );
 }
-

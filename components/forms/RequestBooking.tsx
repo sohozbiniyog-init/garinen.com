@@ -1,5 +1,5 @@
 'use client';
-
+import { PROFESSION_VALUES, type ProfessionType } from '@/lib/professions';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 
 export interface BookingFormData {
@@ -7,7 +7,7 @@ export interface BookingFormData {
   buyerPhone: string;
   buyerEmail: string;
   address: string;
-profession: 'TEACHER' | 'ENGINEER' | 'BUSINESSMAN' | 'GOVT.EMPLOYEE'| 'SELF-EMPLOYED/INFLUENCER' | 'STUDENT' | 'DOCTOR' | 'OTHER';
+  profession: ProfessionType;
   depositAmount: string;
 }
 

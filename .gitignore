@@ -4,6 +4,7 @@ node_modules
 .github
 .env
 .env.local
+.idea
 # Ignore all files in the "node_modules" directory
 node_modules/
 # Ignore all files in the "dist" directory

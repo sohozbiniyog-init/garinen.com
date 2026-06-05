@@ -173,6 +173,7 @@ model Listing {
   bookings        Booking[]
   reviews         Review[]
   featuredListing FeaturedListing?
+  testDrives     TestDrive[]
 
   @@index([shopId, status, createdAt])
   @@index([brand, model, status])
@@ -206,6 +207,25 @@ model Booking {
   @@index([paymentStatus, createdAt])
 }
 
+
+model TestDrive {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  phone          String?
+  preferredDate  String?
+  preferredTime  String?
+  listingId      String?
+  notes          String?
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  listing        Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([listingId])
+}
 model CustomOrder {
   id        String             @id @default(cuid())
   userId    String
