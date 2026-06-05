@@ -9,6 +9,8 @@ export default function ContactPage() {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/[^\d]/g, '') || '8801616449801';
+  const whatsappDefaultMessage = process.env.NEXT_PUBLIC_WHATSAPP_DEFAULT_MESSAGE || 'Hello, I need help with Ghuri Automobiles.';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +68,7 @@ export default function ContactPage() {
               {status === 'sending' ? 'Sending…' : 'Send Message'}
             </button>
             <a href={`mailto:info@ghuriautomobiles.com?subject=${encodeURIComponent('Website contact')}&body=${encodeURIComponent(message)}`} className="rounded-full border px-6 py-3 text-ink">Open mail app</a>
-            <a href="https://wa.me/8801616449801" target="_blank" rel="noreferrer" className="rounded-full border px-6 py-3 text-ink">Contact via WhatsApp</a>
+            <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappDefaultMessage)}`} target="_blank" rel="noreferrer" className="rounded-full border px-6 py-3 text-ink">Contact via WhatsApp</a>
           </div>
 
           {status === 'sent' && <div role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-emerald-800">Thanks — your message was sent. We&apos;ll reply shortly.</div>}
@@ -74,7 +76,7 @@ export default function ContactPage() {
         </form>
 
         <div className="mt-8 border-t pt-6 text-sm text-slate-600">
-          <p>Prefer direct contact? Email us at <a href="mailto:info@ghuriautomobiles.com" className="underline">info@ghuriautomobiles.com</a> or WhatsApp <a href="https://wa.me/8801616449801" target="_blank" rel="noreferrer" className="underline">+880 1616-449801</a>.</p>
+          <p>Prefer direct contact? Email us at <a href="mailto:info@ghuriautomobiles.com" className="underline">info@ghuriautomobiles.com</a> or WhatsApp <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="underline">+{whatsappNumber}</a>.</p>
         </div>
       </section>
     </main>

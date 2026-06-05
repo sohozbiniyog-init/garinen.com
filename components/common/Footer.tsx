@@ -1,8 +1,25 @@
 import Link from 'next/link';
-import { MapPin, Mail, Phone } from 'lucide-react';
+import { MapPin, Mail } from 'lucide-react';
+
+function normalizeUsername(value: string | undefined) {
+  return value?.trim().replace(/^@+/, '') || '';
+}
+
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.8 6.2c-1.2-.8-2-2-2.2-3.5h-3.3v14.2c0 1.5-1.2 2.8-2.8 2.8s-2.8-1.2-2.8-2.8 1.2-2.8 2.8-2.8c.3 0 .6 0 .8.1V11c-.3 0-.6-.1-.9-.1A5.6 5.6 0 0 0 4.8 16.5C4.8 19.6 7.4 22 10.5 22s5.7-2.5 5.7-5.5v-5.5a8 8 0 0 0 4.3 1.3V8.9a5.8 5.8 0 0 1-1.7-.2Z" />
+    </svg>
+  );
+}
 
 export function SiteFooter() {
   const currentYear = new Date().getFullYear();
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/[^\d]/g, '') || '8801616449801';
+  const tiktokUsername = normalizeUsername(process.env.NEXT_PUBLIC_TIKTOK_USERNAME);
+  const youtubeUsername = normalizeUsername(process.env.NEXT_PUBLIC_YOUTUBE_USERNAME);
+  const tiktokHref = tiktokUsername ? `https://www.tiktok.com/@${tiktokUsername}` : '/contact?topic=social';
+  const youtubeHref = youtubeUsername ? `https://www.youtube.com/@${youtubeUsername}` : '/contact?topic=social';
 
   return (
     <footer className="relative mt-16 overflow-hidden border-t border-white/10 bg-[#06070b] text-slate-300">
@@ -26,7 +43,6 @@ export function SiteFooter() {
       />
 
       <div className="glass-panel relative mx-auto w-full max-w-7xl overflow-hidden border-x border-white/5 border-b-0 bg-gradient-to-b from-white/[0.02] to-transparent px-6 py-16 lg:px-10">
-
         <div className="relative grid gap-12 md:grid-cols-[1.2fr_1fr_1fr_1fr] lg:gap-16">
 
           {/* LEFT PANEL */}
@@ -64,7 +80,7 @@ export function SiteFooter() {
               <div className="mt-8 space-y-5">
 
                 <a
-                  href="https://www.google.com/maps/search/?api=1&query=ABM+Tower,+113%2FA,+Gulshan+Avenue,+Dhaka-1212"
+                  href="https://www.google.com/maps/search/?api=1&query=house+no-8,road+19,nikunja+2,dhaka+1229"
                   target="_blank"
                   rel="noreferrer"
                   className="group flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-3 transition hover:border-brand-red/20 hover:bg-white/[0.04]"
@@ -74,22 +90,25 @@ export function SiteFooter() {
                   </span>
                   <span>
                     <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-brand-red">Office</span>
-                    <span className="mt-1 block text-sm text-slate-300">ABM Tower, 113/A, Gulshan Avenue, Dhaka-1212</span>
+                    <span className="mt-1 block text-sm text-slate-300">house no-8,road 19,nikunja 2,Dhaka 1229,Dhaka</span>
                   </span>
                 </a>
 
                 <a
-                  href="https://wa.me/8801616449801"
+                  href={`https://wa.me/${whatsappNumber}`}
                   target="_blank"
                   rel="noreferrer"
                   className="group flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-3 transition hover:border-brand-red/20 hover:bg-white/[0.04]"
                 >
                   <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-red/10 text-brand-red transition group-hover:bg-brand-red group-hover:text-white">
-                    <Phone size={18} />
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M20.52 3.48A11.88 11.88 0 0 0 12 0C5.373 0 0 5.373 0 12c0 2.112.553 4.176 1.603 6.014L0 24l6.246-1.612A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12 0-1.99-.492-3.86-1.48-5.52zM12 21.5c-1.8 0-3.55-.48-5.07-1.39l-.36-.21-3.71.96.99-3.62-.23-.37A9.34 9.34 0 0 1 2 12C2 6.48 6.48 2 12 2c2.5 0 4.86.82 6.76 2.33C20.18 6.24 21 8.5 21 11c0 5.52-4.48 10.5-9 10.5z" />
+                      <path d="M17.3 14.1c-.3-.1-1.7-.9-1.9-1-.2-.1-.4-.1-.6.1-.2.2-.7.9-.8 1.1-.1.2-.2.3-.5.1-.3-.2-1.2-.4-2.3-1.4-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.4.1-.6.1-.1.3-.3.5-.5.2-.2.3-.3.5-.5.2-.2.1-.4 0-.6-.1-.2-.6-1.4-.9-1.9-.2-.4-.5-.3-.6-.3-.2 0-.4 0-.6 0-.2 0-.6.1-.9.4-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.1 3 .1.2 1.8 3 4.4 4.3 3 1.5 3.1.9 3.6.8.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.3z" />
+                    </svg>
                   </span>
                   <span>
                     <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-brand-red">WhatsApp</span>
-                    <span className="mt-1 block text-sm text-slate-300">+880 1616-449801</span>
+                    <span className="mt-1 block text-sm text-slate-300">+{whatsappNumber}</span>
                   </span>
                 </a>
 
@@ -202,46 +221,66 @@ export function SiteFooter() {
               </a>
             </nav>
           </div>
-        </div>
 
-        {/* Divider */}
-        <div className="my-12 border-t border-white/10" />
+          <div className="md:justify-self-start md:self-start">
+            <h3 className="mb-6 text-xs font-black uppercase tracking-[0.28em] text-brand-red">
+              Social links
+            </h3>
 
-        {/* Bottom Bar */}
-        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+            <div className="flex flex-col items-start gap-3 text-left">
+              <a
+                href="/contact?topic=social"
+                className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+                aria-label="Facebook"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M13.5 22v-8.3h2.8l.4-3.2h-3.2V8.3c0-.9.2-1.5 1.6-1.5h1.7V4a22 22 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.3v2.3H7.5v3.2h2.6V22h3.4Z" />
+                </svg>
+                <span>Facebook</span>
+              </a>
 
-          <p className="text-xs text-slate-500">
-            © {currentYear} GariNen. All rights reserved. Built in Bangladesh.
-          </p>
+              <a
+                href="/contact?topic=social"
+                className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+                aria-label="Instagram"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M7.2 2h9.6A5.2 5.2 0 0 1 22 7.2v9.6A5.2 5.2 0 0 1 16.8 22H7.2A5.2 5.2 0 0 1 2 16.8V7.2A5.2 5.2 0 0 1 7.2 2Zm0 2A3.2 3.2 0 0 0 4 7.2v9.6A3.2 3.2 0 0 0 7.2 20h9.6a3.2 3.2 0 0 0 3.2-3.2V7.2A3.2 3.2 0 0 0 16.8 4H7.2Zm4.8 2.5A5.5 5.5 0 1 1 6.5 12 5.5 5.5 0 0 1 12 6.5Zm0 2A3.5 3.5 0 1 0 15.5 12 3.5 3.5 0 0 0 12 8.5Zm5.6-2.7a1.2 1.2 0 1 1-1.2 1.2 1.2 1.2 0 0 1 1.2-1.2Z" />
+                </svg>
+                <span>Instagram</span>
+              </a>
 
-          {/* Social Links */}
-          <div className="flex items-center gap-6">
+              <a
+                href={tiktokHref}
+                target={tiktokUsername ? '_blank' : undefined}
+                rel={tiktokUsername ? 'noreferrer' : undefined}
+                className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+                aria-label={tiktokUsername ? `TikTok @${tiktokUsername}` : 'TikTok'}
+              >
+                <TikTokIcon className="h-5 w-5" />
+                <span>{tiktokUsername ? `@${tiktokUsername}` : 'TikTok'}</span>
+              </a>
 
-            <Link
-              href="/contact?topic=social"
-              className="text-slate-500 transition hover:text-brand-red hover:drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]"
-              title="Contact us"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M13.5 22v-8.3h2.8l.4-3.2h-3.2V8.3c0-.9.2-1.5 1.6-1.5h1.7V4a22 22 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.3v2.3H7.5v3.2h2.6V22h3.4Z" />
-              </svg>
-            </Link>
-
-            <Link href="/contact?topic=social" className="text-slate-500 transition hover:text-brand-red hover:drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" title="Contact us">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M6.94 19H4V9.5h2.94V19ZM5.47 8.2C4.53 8.2 4 7.55 4 6.74 4 5.9 4.55 5.3 5.53 5.3s1.47.6 1.48 1.44c0 .81-.52 1.46-1.54 1.46ZM20 19h-2.95v-5.2c0-1.2-.42-2-1.47-2-.8 0-1.27.54-1.48 1.06-.08.2-.1.47-.1.74V19H11.1s.04-8.8 0-9.5h2.9v1.35c.38-.58 1.05-1.4 2.56-1.4 1.87 0 3.27 1.22 3.27 3.83V19Z" />
-              </svg>
-            </Link>
-
-            <Link href="/contact?topic=social" className="text-slate-500 transition hover:text-brand-red hover:drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" title="Contact us">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M7.2 2h9.6A5.2 5.2 0 0 1 22 7.2v9.6A5.2 5.2 0 0 1 16.8 22H7.2A5.2 5.2 0 0 1 2 16.8V7.2A5.2 5.2 0 0 1 7.2 2Zm0 2A3.2 3.2 0 0 0 4 7.2v9.6A3.2 3.2 0 0 0 7.2 20h9.6a3.2 3.2 0 0 0 3.2-3.2V7.2A3.2 3.2 0 0 0 16.8 4H7.2Zm4.8 2.5A5.5 5.5 0 1 1 6.5 12 5.5 5.5 0 0 1 12 6.5Zm0 2A3.5 3.5 0 1 0 15.5 12 3.5 3.5 0 0 0 12 8.5Zm5.6-2.7a1.2 1.2 0 1 1-1.2 1.2 1.2 1.2 0 0 1 1.2-1.2Z" />
-              </svg>
-            </Link>
-
+              <a
+                href={youtubeHref}
+                target={youtubeUsername ? '_blank' : undefined}
+                rel={youtubeUsername ? 'noreferrer' : undefined}
+                className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+                aria-label={youtubeUsername ? `YouTube @${youtubeUsername}` : 'YouTube'}
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M21.8 8.2s-.2-1.5-.8-2.2c-.8-.9-1.8-.9-2.2-1C15.9 4.8 12 4.8 12 4.8h0s-3.9 0-6.8.2c-.4.1-1.4.1-2.2 1-.6.7-.8 2.2-.8 2.2S2 9.9 2 11.6v1.8c0 1.8.2 3.4.2 3.4s.2 1.5.8 2.2c.8.9 1.8.9 2.2 1 2.9.2 6.8.2 6.8.2s3.9 0 6.8-.2c.4-.1 1.4-.1 2.2-1 .6-.7.8-2.2.8-2.2s.2-1.6.2-3.4v-1.8c0-1.7-.2-3.4-.2-3.4ZM10 14.6V9.4l5.2 2.6L10 14.6Z" />
+                </svg>
+                <span>{youtubeUsername ? `@${youtubeUsername}` : 'YouTube'}</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>
-    </footer>
+          <p className="text-xs text-slate-500 absolute bottom-3 center align-middle w-full text-center">
+            © {currentYear} GariNen. All rights reserved. Built in Bangladesh.
+          </p>
+        
+      </footer>
   );
 }

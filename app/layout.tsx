@@ -3,6 +3,7 @@ import { Fascinate, Fira_Code, Noto_Sans, Geist } from 'next/font/google';
 import { BankRatesProvider } from '@/lib/contexts/bank-rates';
 import { FeaturedProvider } from '@/lib/contexts/featured';
 import { ConditionalFooter } from '@/components/common/ConditionalFooter';
+import { FloatingWhatsAppButton } from '@/components/common/FloatingWhatsAppButton';
 import './globals.css';
 import { cn } from "@/lib/utils/common";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
               {children}
             </div>
             <ConditionalFooter />
+            <FloatingWhatsAppButton />
           </FeaturedProvider>
         </BankRatesProvider>
       </body>
